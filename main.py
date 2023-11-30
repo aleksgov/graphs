@@ -13,9 +13,9 @@ class GraphApp:
         self.matrix_type = tk.StringVar(value="adjacency")  # По умолчанию используется матрица смежности
 
         self.root.attributes('-fullscreen', True)
-        #self.root.overrideredirect(True)
-        #self.root.geometry('400x900+900+200')
-        #self.root.protocol("WM_DELETE_WINDOW", exit)
+        self.root.overrideredirect(True)
+        self.root.geometry('400x900+900+200')
+        self.root.protocol("WM_DELETE_WINDOW", exit)
         self.init_ui()
 
     def init_ui(self):
@@ -45,6 +45,10 @@ class GraphApp:
         self.label_matrix.pack(pady=5)
         self.text_area.pack(pady=5)
         self.draw_button.pack(pady=10)
+
+        self.text_area.bind("<Button-3>", self.show_context_menu)
+        self.context_menu = tk.Menu(self.root, tearoff=0)
+        self.context_menu.add_command(label="Paste", command=self.paste_matrix)
 
     def draw_graph(self):
         try:
@@ -81,6 +85,8 @@ class GraphApp:
         num_vertices, num_edges = len(matrix), len(matrix[0])
         for j in range(num_edges):
             connected_vertices = [[i + 1, matrix[i][j]] for i in range(num_vertices) if matrix[i][j] == 1 or matrix[i][j] == -1]
+            if len(connected_vertices) == 1:
+                graph.add_edge(connected_vertices[0][0], connected_vertices[0][0])
             if len(connected_vertices) == 2:
                 if (connected_vertices[0][1] * connected_vertices[1][1] > 0):
                     graph.add_edge(connected_vertices[1][0], connected_vertices[0][0])
@@ -100,6 +106,17 @@ class GraphApp:
         nx.draw_networkx(self.graph, pos, with_labels=True, font_weight='bold', connectionstyle="arc3,rad=0.1", arrows=True)
 
         self.canvas.draw()
+
+    def show_context_menu(self, event):
+        self.context_menu.post(event.x_root, event.y_root)
+
+    def paste_matrix(self):
+        try:
+            matrix_text = self.root.clipboard_get()
+            self.text_area.delete("1.0", tk.END)
+            self.text_area.insert(tk.END, matrix_text)
+        except tk.TclError:
+            pass 
 
 if __name__ == "__main__":
     root = tk.Tk()

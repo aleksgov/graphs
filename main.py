@@ -12,22 +12,24 @@ class GraphApp:
         self.graph = nx.MultiDiGraph()
         self.matrix_type = tk.StringVar(value="adjacency")  # По умолчанию используется матрица смежности
 
-        # Increase the font size for all elements
-        self.root.option_add('*Font', 'TkDefaultFont 12')
-
         self.root.attributes('-fullscreen', True)
+        #self.root.overrideredirect(True)
+        #self.root.geometry('400x900+900+200')
+        #self.root.protocol("WM_DELETE_WINDOW", exit)
         self.init_ui()
 
     def init_ui(self):
         # Создаем элементы интерфейса
+        self.exit_button = tk.Button(self.root, text="X", command=exit, background='red')
         self.label = tk.Label(self.root, text="Выберите тип матрицы:")
         self.radio_adjacency = tk.Radiobutton(self.root, text="Матрица смежности", variable=self.matrix_type, value="adjacency")
         self.radio_incidence = tk.Radiobutton(self.root, text="Матрица инцидентности", variable=self.matrix_type, value="incidence")
         self.label_matrix = tk.Label(self.root, text="Введите матрицу:")
-        self.text_area = tk.Text(self.root, height=5, width=40)
+        self.text_area = tk.Text(self.root, height=10, width=40)
         self.draw_button = tk.Button(self.root, text="Нарисовать граф", command=self.draw_graph)
 
         # Увеличиваем размер кнопок
+        self.exit_button.config(font=('TkDefaultFont', 12), width=3, height=1)
         self.label.config(font=('TkDefaultFont', 14, 'bold'))
         self.radio_adjacency.config(font=('TkDefaultFont', 12))
         self.radio_incidence.config(font=('TkDefaultFont', 12))
@@ -36,18 +38,13 @@ class GraphApp:
         self.draw_button.config(font=('TkDefaultFont', 12))
 
         # Размещаем элементы на экране
-        self.label.pack(pady=10)
+        self.exit_button.pack(pady=10, anchor='e')
+        self.label.pack(pady=10, )
         self.radio_adjacency.pack(pady=5)
         self.radio_incidence.pack(pady=5)
         self.label_matrix.pack(pady=5)
         self.text_area.pack(pady=5)
         self.draw_button.pack(pady=10)
-
-        self.draw_button.pack(pady=10)
-
-        # Add an exit button
-        self.exit_button = tk.Button(self.root, text="Выход", command=self.root.destroy)
-        self.exit_button.pack(pady=10)
 
     def draw_graph(self):
         try:
@@ -70,10 +67,7 @@ class GraphApp:
         for i in range(len(matrix)):
             for j in range(len(matrix[i])):
                 if matrix[i][j] == 1:
-                    if matrix[j][i] == 1:
-                        graph.add_edge(i + 1, j + 1)
-                    else:
-                        graph.add_edge(i + 1, j + 1)
+                    graph.add_edge(i + 1, j + 1)
 
         return graph
 
@@ -86,23 +80,24 @@ class GraphApp:
 
         num_vertices, num_edges = len(matrix), len(matrix[0])
         for j in range(num_edges):
-            connected_vertices = [i + 1 for i in range(num_vertices) if matrix[i][j] == 1]
+            connected_vertices = [[i + 1, matrix[i][j]] for i in range(num_vertices) if matrix[i][j] == 1 or matrix[i][j] == -1]
             if len(connected_vertices) == 2:
-                graph.add_edge(*connected_vertices)
+                if (connected_vertices[0][1] * connected_vertices[1][1] > 0):
+                    graph.add_edge(connected_vertices[1][0], connected_vertices[0][0])
+                graph.add_edge(connected_vertices[0][0], connected_vertices[1][0])
 
         return graph
 
     def draw_graph_plot(self):
         if hasattr(self, "canvas") and self.canvas:
+            plt.close()
             self.canvas.get_tk_widget().destroy()
 
         pos = nx.spring_layout(self.graph)
 
         self.canvas = FigureCanvasTkAgg(plt.figure())
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
-        nx.draw_networkx(self.graph, pos, with_labels=True, font_weight='bold', connectionstyle="arc3,rad=0.1",
-                         arrows=True)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.NONE)
+        nx.draw_networkx(self.graph, pos, with_labels=True, font_weight='bold', connectionstyle="arc3,rad=0.1", arrows=True)
 
         self.canvas.draw()
 

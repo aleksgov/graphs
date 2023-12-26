@@ -502,13 +502,17 @@ class GraphDrawerApp:
             end_vertex = None
             matrix_coords = [0, 0]
             for j in range(num_vertices):
-                if matrix[j][i] == 1:
+                if matrix[j][i] == 1 and self.start_vertex != None:
+                    end_vertex = self.vertices[j]
+                    matrix_coords[1] = j
+                    self.mode = "edge"
+                elif matrix[j][i] == 1:
                     self.start_vertex = self.vertices[j]
                     matrix_coords[0] = j
                 if matrix[j][i] == -1:
-                    print(j)
                     end_vertex = self.vertices[j]
                     matrix_coords[1] = j
+                    self.mode = "add"
             if (end_vertex == None):
                 self.adjacency_matrix[matrix_coords[0]][matrix_coords[0]] = 1
                 self.finish_edge_context(self.start_vertex)

@@ -60,7 +60,8 @@ class GraphDrawerApp:
 
         self.start_vertex = None
         self.context_menu = None
-        self.mode = "edge"
+        self.mode = "add"
+        self.edge_mode = "arc"
 
         self.edges = []
 
@@ -112,12 +113,12 @@ class GraphDrawerApp:
             return
 
     def toggle_edge_mode(self):
-        if self.mode == "edge":
+        if self.edge_mode == "edge":
             self.edge_mode_button.config(text="Рисование дуг")
-            self.mode = "add"
-        else:
+            self.edge_mode = "arc"
+        if self.edge_mode == "arc":
             self.edge_mode_button.config(text="Рисование ребер")
-            self.mode = "edge"
+            self.edge_mode = "edge"
 
     def create_vertex(self, event):
         x, y = event.x, event.y
@@ -169,7 +170,7 @@ class GraphDrawerApp:
         end_x = end_x - vertex_radius * math.cos(angle)
         end_y = end_y - vertex_radius * math.sin(angle)
 
-        if self.mode == "add":
+        if self.edge_mode == "arc":
             if self.start_vertex == end_vertex:
                 loop_id = self.canvas.create_arc(
                     x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
@@ -191,7 +192,7 @@ class GraphDrawerApp:
             if self.context_menu:
                 self.context_menu.destroy()
 
-        elif self.mode == "edge":
+        elif self.edge_mode == "edge":
             if self.start_vertex == end_vertex:
                 loop_id = self.canvas.create_arc(
                     x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
@@ -376,7 +377,6 @@ class GraphDrawerApp:
 
         edge_index = 0
         for i in range(num_vertices):
-            has_edge = False
             for j in range(num_vertices):
                 if self.adjacency_matrix[i][j] == 1:
                     reverse_edge_exists = self.adjacency_matrix[j][i] == 1
@@ -386,16 +386,20 @@ class GraphDrawerApp:
                             incidence_matrix[j][edge_index] = 1
                             edge_vertices.add((i + 1, j + 1))
                             edge_index += 1
-                            has_edge = True
                     else:
                         incidence_matrix[j][edge_index] = -1
                         incidence_matrix[i][edge_index] = 1
                         edge_vertices.add((i + 1, j + 1))
                         edge_index += 1
-                        has_edge = True
 
+        for i in range(len(incidence_matrix[0])):
+            has_edge = False
+            for j in range(len(incidence_matrix)):
+                if (incidence_matrix[i][j] != 0):
+                    has_edge = True
             if not has_edge:
-                incidence_matrix = [row[:edge_index] + row[edge_index+1:] for row in incidence_matrix]
+                for j in range(len(incidence_matrix)):
+                    incidence_matrix[i] = incidence_matrix[i][:j] + incidence_matrix[i][j+1:]
 
         if edge_index == 0:
            return None, None  
@@ -464,11 +468,11 @@ class GraphDrawerApp:
                     reverse_edge_exists = matrix[j][i] == 1
 
                     if reverse_edge_exists:
-                        self.mode = "edge"
+                        self.edge_mode = "edge"
                         self.start_vertex = self.vertices[i]
                         self.finish_edge_context(end_vertex)
                     else:
-                        self.mode = "add"
+                        self.edge_mode = "arc"
                         self.start_vertex = self.vertices[i]
                         self.finish_edge_context(end_vertex)
 
@@ -505,14 +509,14 @@ class GraphDrawerApp:
                 if matrix[j][i] == 1 and self.start_vertex != None:
                     end_vertex = self.vertices[j]
                     matrix_coords[1] = j
-                    self.mode = "edge"
+                    self.edge_mode = "edge"
                 elif matrix[j][i] == 1:
                     self.start_vertex = self.vertices[j]
                     matrix_coords[0] = j
                 if matrix[j][i] == -1:
                     end_vertex = self.vertices[j]
                     matrix_coords[1] = j
-                    self.mode = "add"
+                    self.edge_mode = "arc"
             if (end_vertex == None):
                 self.adjacency_matrix[matrix_coords[0]][matrix_coords[0]] = 1
                 self.finish_edge_context(self.start_vertex)

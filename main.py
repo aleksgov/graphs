@@ -20,9 +20,6 @@ class GraphDrawerApp:
         self.canvas.bind("<Button-3>", self.show_context_menu)
         self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
 
-        # B1-Motion is used for dragging vertices
-        # self.canvas.bind("<B1-Motion>", self.drag_vertex)
-
         adjacency_button = ttk.Button(root, text="Матрица смежности", command=lambda: (
         self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
         adjacency_button.place(x=50, y=750, width=210, height=35)
@@ -220,8 +217,6 @@ class GraphDrawerApp:
                 widget.destroy()
 
         if not self.adjacency_matrix:
-            label_no_adj_matrix = tk.Label(self.root, text="Пустой граф", font=("Arial", 14, "bold"))
-            label_no_adj_matrix.place(x=800, y=415)
             return
 
         label_adj_matrix = tk.Label(self.root, text="Матрица смежности", font=("Arial", 14, "bold"))
@@ -252,8 +247,6 @@ class GraphDrawerApp:
         incidence_matrix, edge_vertices = self.get_incidence_matrix()
 
         if not incidence_matrix:
-            label_no_inc_matrix = tk.Label(self.root, text="Пустой граф", font=("Arial", 14, "bold"))
-            label_no_inc_matrix.place(x=800, y=415)
             return
 
         label_inc_matrix = tk.Label(self.root, text="Матрица инцидентности", font=("Arial", 14, "bold"))

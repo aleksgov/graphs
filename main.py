@@ -61,7 +61,7 @@ class GraphDrawerApp:
         self.start_vertex = None
         self.context_menu = None
         self.mode = "add"
-        self.edge_mode = "arc"
+        self.edge_mode = "edge"
 
         self.edges = []
 
@@ -116,9 +116,12 @@ class GraphDrawerApp:
         if self.edge_mode == "edge":
             self.edge_mode_button.config(text="Рисование дуг")
             self.edge_mode = "arc"
+            return
+        
         if self.edge_mode == "arc":
             self.edge_mode_button.config(text="Рисование ребер")
             self.edge_mode = "edge"
+            return
 
     def create_vertex(self, event):
         x, y = event.x, event.y
@@ -256,8 +259,13 @@ class GraphDrawerApp:
                                                     start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
                     self.edges.append(loop_id)
                 else:
-                    line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST,
-                                                    fill="lightblue", width=3)
+                    if (self.adjacency_matrix[i][j] == self.adjacency_matrix[j][i]):
+                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y,
+                                                        fill="lightblue", width=3)
+                    else:
+                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST,
+                                                        fill="lightblue", width=3)
+
                     self.edges.append(line_id)
 
     def get_vertex_center(self, vertex_id):
@@ -392,14 +400,18 @@ class GraphDrawerApp:
                         edge_vertices.add((i + 1, j + 1))
                         edge_index += 1
 
-        for i in range(len(incidence_matrix[0])):
+        k = 0
+        while (k < len(incidence_matrix[0])):
             has_edge = False
             for j in range(len(incidence_matrix)):
-                if (incidence_matrix[i][j] != 0):
+                if (incidence_matrix[j][k] != 0):
                     has_edge = True
+                    break
             if not has_edge:
                 for j in range(len(incidence_matrix)):
-                    incidence_matrix[i] = incidence_matrix[i][:j] + incidence_matrix[i][j+1:]
+                    incidence_matrix[j] = incidence_matrix[j][:k] + incidence_matrix[j][k+1:]
+            else:
+                k += 1
 
         if edge_index == 0:
            return None, None  

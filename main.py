@@ -62,6 +62,8 @@ class GraphDrawerApp:
         self.context_menu = None
         self.mode = "add"
 
+        self.edges = []
+
     def build_graph(self):
         matrix_type = self.matrix_type_var.get()
         if matrix_type == "  Матрица смежности":
@@ -236,6 +238,43 @@ class GraphDrawerApp:
             text_id = self.get_text_id_for_vertex(vertex_id)
             self.canvas.coords(vertex_id, x - 18, y - 18, x + 18, y + 18)
             self.canvas.coords(text_id, x, y)
+            self.redraw_edges()
+
+    def redraw_edges(self):
+        for edge_id in self.edges:
+            self.canvas.delete(edge_id)
+        self.edges = []
+
+        for i, start_vertex in enumerate(self.vertices):
+            for j, end_vertex in enumerate(self.vertices):
+                if (self.adjacency_matrix[i][j] != 1):
+                    continue
+
+                start_x, start_y = self.get_vertex_center(start_vertex)
+                end_x, end_y = self.get_vertex_center(end_vertex)
+                x, y = self.canvas.coords(end_vertex)[:2]
+
+                vertex_radius = 15
+                angle = math.atan2(end_y - start_y, end_x - start_x)
+                start_x = start_x + vertex_radius * math.cos(angle)
+                start_y = start_y + vertex_radius * math.sin(angle)
+                end_x = end_x - vertex_radius * math.cos(angle)
+                end_y = end_y - vertex_radius * math.sin(angle)
+
+                if start_vertex == end_vertex:
+                    loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25,
+                                                    start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
+                    self.edges.append(loop_id)
+                else:
+                    line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST,
+                                                    fill="lightblue", width=3)
+                    self.edges.append(line_id)
+
+    def get_vertex_center(self, vertex_id):
+        x, y = self.canvas.coords(vertex_id)[0:2]
+        center_x = x + 18
+        center_y = y + 18
+        return center_x, center_y
 
     def get_text_id_for_vertex(self, vertex_id):
         index = self.vertices.index(vertex_id)

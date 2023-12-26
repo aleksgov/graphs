@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import math
+
+
 class GraphDrawerApp:
     def __init__(self, root):
         self.root = root
@@ -19,12 +21,14 @@ class GraphDrawerApp:
         self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
 
         # B1-Motion is used for dragging vertices
-        #self.canvas.bind("<B1-Motion>", self.drag_vertex)
+        # self.canvas.bind("<B1-Motion>", self.drag_vertex)
 
-        adjacency_button = ttk.Button(root, text="Матрица смежности", command=lambda: (self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
+        adjacency_button = ttk.Button(root, text="Матрица смежности", command=lambda: (
+        self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
         adjacency_button.place(x=50, y=750, width=210, height=35)
 
-        incidence_button = ttk.Button(root, text="Матрица инцидентности", command=lambda: (self.display_incidence_matrix(), self.display_incidence_matrix_label()))
+        incidence_button = ttk.Button(root, text="Матрица инцидентности", command=lambda: (
+        self.display_incidence_matrix(), self.display_incidence_matrix_label()))
         incidence_button.place(x=290, y=750, width=210, height=35)
 
         clear_button = ttk.Button(root, text="Очистить граф", command=self.clear_graph)
@@ -34,18 +38,20 @@ class GraphDrawerApp:
         self.mode_button.place(x=870, y=750, width=185, height=35)
 
         self.text_output = tk.Text(root, wrap=tk.WORD, width=40, height=10, font=("Courier", 12))
-        self.text_output.place(x=800, y=15, width=300, height=300)
+        self.text_output.place(x=760, y=15, width=380, height=300)
 
         style = ttk.Style()
         style.configure("TButton", padding=(10, 5), font="Helvetica 12", foreground="black", background="lightblue")
 
-        build_adj_graph_button = ttk.Button(root, text="Построить граф\n(матрица смежности)", command = self.parse_adjacency_matrix)
-        build_adj_graph_button.place(x=760, y=330, width=190, height=75)
-        build_adj_graph_button["style"] = "TButton"
+        self.matrix_type_var = tk.StringVar()
+        self.matrix_type_var.set("  Матрица смежности")
+        matrix_type_combobox = ttk.Combobox(root, textvariable=self.matrix_type_var, values=["  Матрица смежности", "Матрица инцидентности"], state="readonly", takefocus=False, font=("Helvetica", 12))
+        matrix_type_combobox.place(x=760, y=335, width=200, height=35)
+        matrix_type_combobox["style"] = "TCombobox"
 
-        build_inc_graph_button = ttk.Button(root, text="Построить граф\n(матрица инцидентности)", command = self.parse_incidence_matrix)
-        build_inc_graph_button.place(x=970, y=330, width=190, height=75)
-        build_inc_graph_button["style"] = "TButton"
+        build_graph_button = ttk.Button(root, text="Построить граф", command=self.build_graph)
+        build_graph_button.place(x=990, y=335, width=150, height=35)
+        build_graph_button["style"] = "TButton"
 
         self.text_output.bind("<Button-3>", self.show_text_context_menu)
         self.text_context_menu = tk.Menu(root, tearoff=0)
@@ -55,6 +61,13 @@ class GraphDrawerApp:
         self.start_vertex = None
         self.context_menu = None
         self.mode = "add"
+
+    def build_graph(self):
+        matrix_type = self.matrix_type_var.get()
+        if matrix_type == "  Матрица смежности":
+            self.parse_adjacency_matrix()
+        elif matrix_type == "Матрица инцидентности":
+            self.parse_incidence_matrix()
 
     def show_text_context_menu(self, event):
         self.text_context_menu.post(event.x_root, event.y_root)
@@ -81,16 +94,16 @@ class GraphDrawerApp:
 
     def toggle_mode(self):
         if self.mode == "add":
-            self.mode_button.config(text = "Передвижение вершин")
+            self.mode_button.config(text="Передвижение вершин")
             self.mode = "drag"
             self.canvas.unbind("<Button-1>")
             self.canvas.unbind("<Button-3>")
             self.canvas.unbind("<ButtonRelease-1>")
             self.canvas.bind("<B1-Motion>", self.drag_vertex)
             return
-        
+
         if self.mode == "drag":
-            self.mode_button.config(text = "Конструктор вершин")
+            self.mode_button.config(text="Конструктор вершин")
             self.mode = "add"
             self.canvas.bind("<Button-1>", self.create_vertex)
             self.canvas.bind("<Button-3>", self.show_context_menu)
@@ -100,7 +113,8 @@ class GraphDrawerApp:
 
     def create_vertex(self, event):
         x, y = event.x, event.y
-        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue", width=3)
+        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue",
+                                            width=3)
         self.vertices.append(vertex_id)
 
         vertex_index = len(self.vertices)
@@ -130,7 +144,8 @@ class GraphDrawerApp:
             self.context_menu = tk.Menu(self.root, tearoff=0)
             for vertex in self.vertices:
                 dest_vertex_index = self.vertices.index(vertex) + 1
-                self.context_menu.add_command(label=f"До {dest_vertex_index}", command=lambda v=vertex: self.finish_edge_context(v))
+                self.context_menu.add_command(label=f"До {dest_vertex_index}",
+                                              command=lambda v=vertex: self.finish_edge_context(v))
             self.context_menu.post(event.x_root, event.y_root)
 
     def finish_edge_context(self, end_vertex):
@@ -147,7 +162,8 @@ class GraphDrawerApp:
         end_y = end_y - vertex_radius * math.sin(angle)
 
         if self.start_vertex == end_vertex:
-            loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
+            loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
+                                             outline="lightblue", width=3)
             self.edges.append(loop_id)
             vertex_index = self.vertices.index(end_vertex)
             self.adjacency_matrix[vertex_index][vertex_index] = 1
@@ -207,7 +223,7 @@ class GraphDrawerApp:
             label_no_adj_matrix = tk.Label(self.root, text="Пустой граф", font=("Arial", 14, "bold"))
             label_no_adj_matrix.place(x=800, y=415)
             return
-        
+
         label_adj_matrix = tk.Label(self.root, text="Матрица смежности", font=("Arial", 14, "bold"))
         label_adj_matrix.place(x=800, y=415)
         row_labels = [str(i) for i in range(1, len(self.adjacency_matrix) + 1)]
@@ -238,7 +254,7 @@ class GraphDrawerApp:
         if not incidence_matrix:
             label_no_inc_matrix = tk.Label(self.root, text="Пустой граф", font=("Arial", 14, "bold"))
             label_no_inc_matrix.place(x=800, y=415)
-            return        
+            return
 
         label_inc_matrix = tk.Label(self.root, text="Матрица инцидентности", font=("Arial", 14, "bold"))
         label_inc_matrix.place(x=800, y=415)
@@ -299,9 +315,10 @@ class GraphDrawerApp:
                     edge_index += 1
 
         return incidence_matrix, edge_vertices
-    
+
     def create_vertex_xy(self, x, y):
-        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue", width=3)
+        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue",
+                                            width=3)
         self.vertices.append(vertex_id)
 
         vertex_index = len(self.vertices)
@@ -318,13 +335,14 @@ class GraphDrawerApp:
         if self.start_vertex is not None:
             end_vertex = vertex_id
             self.finish_edge_context(end_vertex)
-    
+
     def create_graph(self, vertices_count):
         center_x, center_y = self.canvas.winfo_width() / 2, self.canvas.winfo_height() / 2
         radius = center_x / 2
         for i in range(vertices_count):
-            self.create_vertex_xy(center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i))
- 
+            self.create_vertex_xy(center_x + radius * math.cos(2 * math.pi / vertices_count * i),
+                                  center_y + radius * math.sin(2 * math.pi / vertices_count * i))
+
     def parse_adjacency_matrix(self):
         self.canvas.delete("all")
         self.vertices = []
@@ -337,17 +355,17 @@ class GraphDrawerApp:
         if len(lines[0]) == 0:
             self.open_poup_window("Ошибка!", "Формат матрицы неверен")
             return
-        
+
         try:
             matrix = [list(map(int, line.split())) for line in lines]
         except ValueError:
             self.open_poup_window("Ошибка!", "Формат матрицы неверен")
             return
-        
+
         if any(len(row) != len(matrix) for row in matrix):
             self.open_poup_window("Ошибка!", "Матрица должна быть квадратной")
             return
-        
+
         self.create_graph(len(matrix))
 
         for i in range(len(matrix)):
@@ -368,13 +386,13 @@ class GraphDrawerApp:
         if len(lines[0]) == 0:
             self.open_poup_window("Ошибка!", "Формат матрицы неверен")
             return
-        
+
         try:
             matrix = [list(map(int, line.split())) for line in lines]
         except ValueError:
             self.open_poup_window("Ошибка!", "Формат матрицы неверен")
             return
-        
+
         any_row = matrix[0]
         if any(len(row) != len(any_row) for row in matrix):
             self.open_poup_window("Ошибка!", "Матрица должна быть правильных размеров")
@@ -400,7 +418,7 @@ class GraphDrawerApp:
                 continue
             self.adjacency_matrix[matrix_coords[0]][matrix_coords[1]] = 1
             self.finish_edge_context(end_vertex)
-            
+
 
 if __name__ == "__main__":
     root = tk.Tk()

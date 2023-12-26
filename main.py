@@ -307,6 +307,9 @@ class GraphDrawerApp:
                     edge_vertices.append((i + 1, j + 1) if self.adjacency_matrix[j][i] == 0 else (j + 1, i + 1))
                     edge_index += 1
 
+        if  edge_index == 0 :
+           return None, None           
+
         return incidence_matrix, edge_vertices
 
     def create_vertex_xy(self, x, y):
@@ -402,7 +405,6 @@ class GraphDrawerApp:
                     self.start_vertex = self.vertices[j]
                     matrix_coords[0] = j
                 if matrix[j][i] == -1:
-                    print(j)
                     end_vertex = self.vertices[j]
                     matrix_coords[1] = j
             if (end_vertex == None):

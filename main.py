@@ -37,6 +37,9 @@ class GraphDrawerApp:
         self.text_output = tk.Text(root, wrap=tk.WORD, width=40, height=10, font=("Courier", 12))
         self.text_output.place(x=760, y=15, width=380, height=300)
 
+        self.edge_mode_button = ttk.Button(root, text="Рисование ребер", command=self.toggle_edge_mode)
+        self.edge_mode_button.place(x=870, y=700, width=185, height=35)
+
         style = ttk.Style()
         style.configure("TButton", padding=(10, 5), font="Helvetica 12", foreground="black", background="lightblue")
 
@@ -72,10 +75,8 @@ class GraphDrawerApp:
     def open_poup_window(self, title, _text):
         win = tk.Toplevel()
         win.wm_title(title)
-
         l = tk.Label(win, text=_text)
         l.grid(row=0, column=0)
-
         b = ttk.Button(win, text="Понятно", command=win.destroy)
         b.grid(row=1, column=0)
 
@@ -107,6 +108,25 @@ class GraphDrawerApp:
             self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
             self.canvas.unbind("<B1-Motion>")
             return
+
+        if self.mode == "edge":
+            self.mode_button.config(text="Конструктор вершин")
+            self.mode = "add"
+            self.canvas.bind("<Button-1>", self.create_vertex)
+            self.canvas.bind("<Button-3>", self.show_context_menu)
+            self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
+            self.canvas.unbind("<B1-Motion>")
+            self.canvas.unbind("<Motion>")
+            return
+
+    def toggle_edge_mode(self):
+        if self.mode == "edge":
+            self.mode_button.config(text="Конструктор вершин")
+            self.mode = "add"
+            self.canvas.unbind("<Motion>")
+        else:
+            self.mode_button.config(text="Рисование ребер")
+            self.mode = "edge"
 
     def create_vertex(self, event):
         x, y = event.x, event.y
@@ -158,22 +178,50 @@ class GraphDrawerApp:
         end_x = end_x - vertex_radius * math.cos(angle)
         end_y = end_y - vertex_radius * math.sin(angle)
 
-        if self.start_vertex == end_vertex:
-            loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
-                                             outline="lightblue", width=3)
-            self.edges.append(loop_id)
-            vertex_index = self.vertices.index(end_vertex)
-            self.adjacency_matrix[vertex_index][vertex_index] = 1
-        else:
-            line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", width=3)
-            self.edges.append(line_id)
-            start_vertex_index = self.vertices.index(self.start_vertex)
-            end_vertex_index = self.vertices.index(end_vertex)
-            self.adjacency_matrix[start_vertex_index][end_vertex_index] = 1
+        if self.mode == "add":
+            if self.start_vertex == end_vertex:
+                loop_id = self.canvas.create_arc(
+                    x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
+                    outline="lightblue", width=3
+                )
+                self.edges.append(loop_id)
+                vertex_index = self.vertices.index(end_vertex)
+                self.adjacency_matrix[vertex_index][vertex_index] = 1
+            else:
+                line_id = self.canvas.create_line(
+                    start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", width=3
+                )
+                self.edges.append(line_id)
+                start_vertex_index = self.vertices.index(self.start_vertex)
+                end_vertex_index = self.vertices.index(end_vertex)
+                self.adjacency_matrix[start_vertex_index][end_vertex_index] = 1
 
-        self.start_vertex = None
-        if self.context_menu:
-            self.context_menu.destroy()
+            self.start_vertex = None
+            if self.context_menu:
+                self.context_menu.destroy()
+
+        elif self.mode == "edge":
+            if self.start_vertex == end_vertex:
+                loop_id = self.canvas.create_arc(
+                    x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
+                    outline="lightblue", width=3
+                )
+                self.edges.append(loop_id)
+                vertex_index = self.vertices.index(end_vertex)
+                self.adjacency_matrix[vertex_index][vertex_index] = 1
+            else:
+                line_id = self.canvas.create_line(
+                    start_x, start_y, end_x, end_y, fill="lightblue", width=3
+                )
+                self.edges.append(line_id)
+                start_vertex_index = self.vertices.index(self.start_vertex)
+                end_vertex_index = self.vertices.index(end_vertex)
+                self.adjacency_matrix[start_vertex_index][end_vertex_index] = 1
+                self.adjacency_matrix[end_vertex_index][start_vertex_index] = 1
+
+            self.start_vertex = None
+            if self.context_menu:
+                self.context_menu.destroy()
 
     def finish_edge(self, event):
         if self.context_menu:
@@ -307,9 +355,6 @@ class GraphDrawerApp:
                     edge_vertices.append((i + 1, j + 1) if self.adjacency_matrix[j][i] == 0 else (j + 1, i + 1))
                     edge_index += 1
 
-        if  edge_index == 0 :
-           return None, None           
-
         return incidence_matrix, edge_vertices
 
     def create_vertex_xy(self, x, y):
@@ -369,7 +414,18 @@ class GraphDrawerApp:
                 if matrix[i][j] == 1:
                     self.adjacency_matrix[i][j] = 1
                     self.start_vertex = self.vertices[i]
-                    self.finish_edge_context(self.vertices[j])
+                    end_vertex = self.vertices[j]
+
+                    reverse_edge_exists = matrix[j][i] == 1
+
+                    if reverse_edge_exists:
+                        self.mode = "edge"
+                        self.start_vertex = self.vertices[i]
+                        self.finish_edge_context(end_vertex)
+                    else:
+                        self.mode = "add"
+                        self.start_vertex = self.vertices[i]
+                        self.finish_edge_context(end_vertex)
 
     def parse_incidence_matrix(self):
         self.canvas.delete("all")
@@ -405,6 +461,7 @@ class GraphDrawerApp:
                     self.start_vertex = self.vertices[j]
                     matrix_coords[0] = j
                 if matrix[j][i] == -1:
+                    print(j)
                     end_vertex = self.vertices[j]
                     matrix_coords[1] = j
             if (end_vertex == None):

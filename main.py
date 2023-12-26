@@ -60,7 +60,7 @@ class GraphDrawerApp:
 
         self.start_vertex = None
         self.context_menu = None
-        self.mode = "add"
+        self.mode = "edge"
 
         self.edges = []
 
@@ -111,23 +111,12 @@ class GraphDrawerApp:
             self.canvas.unbind("<B1-Motion>")
             return
 
-        if self.mode == "edge":
-            self.mode_button.config(text="Конструктор вершин")
-            self.mode = "add"
-            self.canvas.bind("<Button-1>", self.create_vertex)
-            self.canvas.bind("<Button-3>", self.show_context_menu)
-            self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
-            self.canvas.unbind("<B1-Motion>")
-            self.canvas.unbind("<Motion>")
-            return
-
     def toggle_edge_mode(self):
         if self.mode == "edge":
-            self.mode_button.config(text="Конструктор вершин")
+            self.edge_mode_button.config(text="Рисование дуг")
             self.mode = "add"
-            self.canvas.unbind("<Motion>")
         else:
-            self.mode_button.config(text="Рисование ребер")
+            self.edge_mode_button.config(text="Рисование ребер")
             self.mode = "edge"
 
     def create_vertex(self, event):
@@ -383,18 +372,35 @@ class GraphDrawerApp:
         num_edges = sum(sum(row) for row in self.adjacency_matrix)
 
         incidence_matrix = [[0] * num_edges for _ in range(num_vertices)]
-        edge_vertices = []
+        edge_vertices = set()
 
         edge_index = 0
         for i in range(num_vertices):
+            has_edge = False
             for j in range(num_vertices):
                 if self.adjacency_matrix[i][j] == 1:
-                    incidence_matrix[j][edge_index] = -1
-                    incidence_matrix[i][edge_index] = 1
-                    edge_vertices.append((i + 1, j + 1) if self.adjacency_matrix[j][i] == 0 else (j + 1, i + 1))
-                    edge_index += 1
+                    reverse_edge_exists = self.adjacency_matrix[j][i] == 1
+                    if reverse_edge_exists:
+                        if (j + 1, i + 1) not in edge_vertices:
+                            incidence_matrix[i][edge_index] = 1
+                            incidence_matrix[j][edge_index] = 1
+                            edge_vertices.add((i + 1, j + 1))
+                            edge_index += 1
+                            has_edge = True
+                    else:
+                        incidence_matrix[j][edge_index] = -1
+                        incidence_matrix[i][edge_index] = 1
+                        edge_vertices.add((i + 1, j + 1))
+                        edge_index += 1
+                        has_edge = True
 
-        return incidence_matrix, edge_vertices
+            if not has_edge:
+                incidence_matrix = [row[:edge_index] + row[edge_index+1:] for row in incidence_matrix]
+
+        if edge_index == 0:
+           return None, None  
+
+        return incidence_matrix, list(edge_vertices)
 
     def create_vertex_xy(self, x, y):
         vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue",

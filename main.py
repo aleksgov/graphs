@@ -21,31 +21,33 @@ class GraphDrawerApp:
         self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
 
         adjacency_button = ttk.Button(root, text="Матрица смежности", command=lambda: (
-        self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
+            self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
         adjacency_button.place(x=50, y=750, width=210, height=35)
 
         incidence_button = ttk.Button(root, text="Матрица инцидентности", command=lambda: (
-        self.display_incidence_matrix(), self.display_incidence_matrix_label()))
+            self.display_incidence_matrix(), self.display_incidence_matrix_label()))
         incidence_button.place(x=290, y=750, width=210, height=35)
 
         clear_button = ttk.Button(root, text="Очистить граф", command=self.clear_graph)
         clear_button.place(x=530, y=750, width=140, height=35)
 
         self.mode_button = ttk.Button(root, text="Конструктор вершин", command=self.toggle_mode)
-        self.mode_button.place(x=870, y=750, width=185, height=35)
+        self.mode_button.place(x=870, y=780, width=185, height=35)
 
         self.text_output = tk.Text(root, wrap=tk.WORD, width=40, height=10, font=("Courier", 12))
         self.text_output.place(x=760, y=15, width=380, height=300)
 
         self.edge_mode_button = ttk.Button(root, text="Рисование ребер", command=self.toggle_edge_mode)
-        self.edge_mode_button.place(x=870, y=700, width=185, height=35)
+        self.edge_mode_button.place(x=870, y=730, width=185, height=35)
 
         style = ttk.Style()
         style.configure("TButton", padding=(10, 5), font="Helvetica 12", foreground="black", background="lightblue")
 
         self.matrix_type_var = tk.StringVar()
         self.matrix_type_var.set("  Матрица смежности")
-        matrix_type_combobox = ttk.Combobox(root, textvariable=self.matrix_type_var, values=["  Матрица смежности", "Матрица инцидентности"], state="readonly", takefocus=False, font=("Helvetica", 12))
+        matrix_type_combobox = ttk.Combobox(root, textvariable=self.matrix_type_var,
+                                            values=["  Матрица смежности", "Матрица инцидентности"], state="readonly",
+                                            takefocus=False, font=("Helvetica", 12))
         matrix_type_combobox.place(x=760, y=335, width=200, height=35)
         matrix_type_combobox["style"] = "TCombobox"
 
@@ -117,7 +119,7 @@ class GraphDrawerApp:
             self.edge_mode_button.config(text="Рисование дуг")
             self.edge_mode = "arc"
             return
-        
+
         if self.edge_mode == "arc":
             self.edge_mode_button.config(text="Рисование ребер")
             self.edge_mode = "edge"
@@ -256,15 +258,15 @@ class GraphDrawerApp:
 
                 if start_vertex == end_vertex:
                     loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25,
-                                                    start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
+                                                     start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
                     self.edges.append(loop_id)
                 else:
                     if (self.adjacency_matrix[i][j] == self.adjacency_matrix[j][i]):
                         line_id = self.canvas.create_line(start_x, start_y, end_x, end_y,
-                                                        fill="lightblue", width=3)
+                                                          fill="lightblue", width=3)
                     else:
                         line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST,
-                                                        fill="lightblue", width=3)
+                                                          fill="lightblue", width=3)
 
                     self.edges.append(line_id)
 
@@ -409,12 +411,12 @@ class GraphDrawerApp:
                     break
             if not has_edge:
                 for j in range(len(incidence_matrix)):
-                    incidence_matrix[j] = incidence_matrix[j][:k] + incidence_matrix[j][k+1:]
+                    incidence_matrix[j] = incidence_matrix[j][:k] + incidence_matrix[j][k + 1:]
             else:
                 k += 1
 
         if edge_index == 0:
-           return None, None  
+            return None, None
 
         return incidence_matrix, list(edge_vertices)
 

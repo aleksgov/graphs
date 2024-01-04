@@ -3,6 +3,31 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import math
 
+import datetime
+
+class InputDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        layout = QFormLayout(self)
+        
+        self.input = QLineEdit(self)
+        layout.addRow("Ведите вес", self.input)
+
+        self.comboBox = QComboBox()
+        self.comboBox.addItem("Дуга")
+        self.comboBox.addItem("Ребро")
+        layout.addWidget(self.comboBox)
+        
+        layout.addWidget(buttonBox)
+        
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+    
+    def getInputs(self):
+        return [self.input.text(), self.comboBox.currentIndex()]
+
 class Ui_MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -10,25 +35,29 @@ class Ui_MainWindow(QMainWindow):
 
         self.vertices = []
         self.edges = []
-        self.start_vertex = None
         self.edge_mode = "edge"
         self.matrix_weight_mode = "no_weight"
         self.parse_matrix_mode = "adj"
+        self.add_mode = "edge"
 
         self.vertex_radius = 18
+        self.start_vertex = -1
+        self.dragged_vertex_index = -1
+        self.cursor_pos = [0, 0]
 
         self.setupUi()
         self.setupButtons()
         self.show()
 
+        self.toggle_add_mode()
+
     def setupUi(self):
+        self.dialog = InputDialog(self)
+
         self.setObjectName("MainWindow")
         self.resize(1200, 850)
         self.setWindowTitle("Graph Drawer")
         self.centralwidget = QWidget(self)
-
-        self.imageBackground = QImage(QSize(685, 685), QImage.Format_ARGB32)
-        self.imageBackground.fill(Qt.transparent)
 
         self.DisplayAdjMatrixButton = QPushButton(self.centralwidget, text = "Матрица смежности")
         self.DisplayAdjMatrixButton.setGeometry(QRect(50, 750, 210, 35))
@@ -39,10 +68,10 @@ class Ui_MainWindow(QMainWindow):
         self.ClearButton = QPushButton(self.centralwidget, text = "Очистить поле")
         self.ClearButton.setGeometry(QRect(530, 750, 140, 35))
 
-        self.ChangeModeButton = QPushButton(self.centralwidget, text = "Конструктор вершин")
-        self.ChangeModeButton.setGeometry(QRect(870, 780, 185, 35))
+        self.VertexModeButton = QPushButton(self.centralwidget, text = "Конструктор вершин")
+        self.VertexModeButton.setGeometry(QRect(870, 780, 185, 35))
 
-        self.EdgeModeButton = QPushButton(self.centralwidget, text = "Рисование ребер")
+        self.EdgeModeButton = QPushButton(self.centralwidget, text = "Рисование связей")
         self.EdgeModeButton.setGeometry(QRect(870, 730, 185, 35))
 
         self.TextOutput = QTextEdit(self.centralwidget)
@@ -58,8 +87,6 @@ class Ui_MainWindow(QMainWindow):
         # css?
         #self.InputMatrixSelectorCombo.setObjectName("Something")
 
-        self.DrawFrame()
-
         self.setCentralWidget(self.centralwidget)
 
         # self.menubar = QMenuBar(self)
@@ -73,63 +100,180 @@ class Ui_MainWindow(QMainWindow):
 
         QMetaObject.connectSlotsByName(self)
 
-    def DrawFrame(self):
-        qp = QPainter(self.imageBackground)
-        qp.setPen(QPen(QColor(120, 120, 120), 1, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+    def setupButtons(self):
+        self.DisplayAdjMatrixButton.clicked.connect(self.display_adjacency_matrix)
+        self.DisplayIncMatrixButton.clicked.connect(self.display_incidence_matrix)
 
-        qp.drawLine(0, 0, 684, 0)
-        qp.drawLine(684, 0, 684, 684)
-        qp.drawLine(684, 684, 0, 684)
-        qp.drawLine(0, 684, 0, 0)
-        qp.end()
+        self.EdgeModeButton.clicked.connect(self.toggle_add_mode)
+        self.VertexModeButton.clicked.connect(self.toggle_add_mode)
 
-    def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        self.ClearButton.clicked.connect(self.clear_graph)
 
-        if reply == QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
+        self.InputMatrixSelectorCombo.currentIndexChanged.connect(self.index_changed)
+        self.BuildGraphButton.clicked.connect(self.build_graph)
+
+    # def closeEvent(self, event):
+    #     reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()
+    #     else:
+    #         event.ignore()
 
     def warningPopup(self, title, _text):
         QMessageBox.question(self, title, _text, QMessageBox.Ok, QMessageBox.Ok)
 
+    def toggle_add_mode(self):
+        if (self.add_mode == "vertex"):
+            self.EdgeModeButton.setStyleSheet("background-color: yellow")
+            self.VertexModeButton.setStyleSheet("background-color: white")
+            self.add_mode = "edge"
+        elif (self.add_mode == "edge"):
+            self.VertexModeButton.setStyleSheet("background-color: yellow")
+            self.EdgeModeButton.setStyleSheet("background-color: white")
+            self.add_mode = "vertex"
+
     def mousePressEvent(self, event):
         if (15 < event.x() < 700 and 15 < event.y() < 700):
-            
-                self.RenderVertex(self.imageBackground, event.x(), event.y(), str(len(self.vertices) + 1))
-                self.vertices.append([event.x(), event.y(), 1])
-                self.update()
+            if (self.add_mode == "vertex"):
+                i = 0
+                while i < len(self.vertices):
+                    if (abs(self.vertices[i][0] - event.x()) < self.vertex_radius and abs(self.vertices[i][1] - event.y()) < self.vertex_radius):
+                        self.dragged_vertex_index = i
+                        break
+                    i += 1
+                else:
+                    #self.DrawVertex(self, event.x(), event.y(), str(len(self.vertices) + 1))
+                    self.vertices.append([event.x(), event.y(), 1])
+                    self.update()
+            if (self.add_mode == "edge"):
+                for i, vertex in enumerate(self.vertices):
+                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
+                        self.start_vertex = i
 
-    def RenderVertex(self, image, x, y, index):
-        x -= self.vertex_radius
-        y -= self.vertex_radius
+    def mouseMoveEvent(self, event):
+        if (15 < event.x() < 700 and 15 < event.y() < 700):
+            if (self.dragged_vertex_index != -1):
+                self.vertices[self.dragged_vertex_index][0] = event.x()
+                self.vertices[self.dragged_vertex_index][1] = event.y()
+
+            if (self.start_vertex != -1):
+                self.cursor_pos = [event.x(), event.y()]
+
+            self.update()
+        else:
+            self.dragged_vertex_index = -1
+            self.start_vertex = -1
+
+    def mouseReleaseEvent(self, event):
+        if (self.start_vertex != -1):
+            for i, vertex in enumerate(self.vertices):
+                if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
+                    self.end_edge(self.start_vertex, i)
+            
+        self.dragged_vertex_index = -1
+        self.start_vertex = -1
+        self.update()
+
+    def DrawFrame(self):
+        painter = QPainter(self)
+        pen = QPen(QColor(120, 120, 120), 1, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        painter.setPen(pen)
+
+        painter.drawLine(15, 15, 700, 15)
+        painter.drawLine(700, 15, 700, 700)
+        painter.drawLine(700, 700, 15, 700)
+        painter.drawLine(15, 700, 15, 15)
+        painter.end()
+
+    def DrawVertices(self):
+        for i, vertex in enumerate(self.vertices):
+            self.DrawVertex(self, vertex[0], vertex[1], str(i + 1))
+
+    def DrawVertex(self, image, x, y, index):
         painter = QPainter(image)
+
         pen = painter.pen()
         pen.setColor(QColor(Qt.black))
         pen.setWidth(2)
         painter.setPen(pen)
+
         brush = painter.brush()
         brush.setColor(QColor(Qt.white))
         brush.setStyle(Qt.SolidPattern)
         painter.setBrush(brush)
+
         painter.drawEllipse(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2))
+
         font = QFont("Arial", 12)
         painter.setFont(font)
         painter.drawText(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2), Qt.AlignCenter, index)
-        painter.end()
-    
-    def paintEvent(self, event):
-        canvasPainter = QPainter(self)
-        canvasPainter.drawImage(QPoint(15, 15), self.imageBackground)
 
-    def setupButtons(self):
-        self.DisplayAdjMatrixButton.clicked.connect(self.display_adjacency_matrix)
-        self.DisplayIncMatrixButton.clicked.connect(self.display_incidence_matrix)
-        self.EdgeModeButton.clicked.connect(self.toggle_edge_mode)
-        self.ClearButton.clicked.connect(self.clear_graph)
-        self.BuildGraphButton.clicked.connect(self.build_graph)
-        self.InputMatrixSelectorCombo.currentIndexChanged.connect(self.index_changed)
+        painter.end()
+
+    def DrawEdges(self):
+        for edge in self.edges:
+            self.DrawEdge(self, self.vertices[edge[0]][0], self.vertices[edge[0]][1], self.vertices[edge[1]][0], self.vertices[edge[1]][1], edge[2], edge[3])
+    
+    def DrawEdge(self, image, x1, y1, x2, y2, weight = -1, type = 1):
+        painter = QPainter(image)
+        pen = QPen(QColor(80, 80, 120), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        painter.setPen(pen)
+
+        if (x1 == x2 and y1 == y2):
+            painter.drawArc(QRect(x1 - self.vertex_radius * 2, y1 - self.vertex_radius * 2, self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
+
+            if weight != -1:
+                brush = painter.brush()
+                brush.setColor(QColor(Qt.white))
+                brush.setStyle(Qt.SolidPattern)
+                painter.setBrush(brush)
+                painter.drawRect(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18)
+                
+                font = QFont("Arial", 12)
+                painter.setFont(font)
+                painter.drawText(QRectF(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18), Qt.AlignCenter, str(weight))
+        else:
+            painter.drawLine(int(x1),int(y1),int(x2),int(y2))
+
+            if (type == 0):
+                angle = math.atan2(y2 - y1, x2 - x1)
+                x2 = x2 - self.vertex_radius * math.cos(angle)
+                y2 = y2 - self.vertex_radius * math.sin(angle)
+                arrow_len = 15
+                arrow_open_angle = math.pi / 10
+                brush = painter.brush()
+                brush.setColor(QColor(80, 80, 120))
+                brush.setStyle(Qt.SolidPattern)
+                painter.setBrush(brush)
+                points = [
+                    QPointF(x2, y2),
+                    QPointF(x2 - arrow_len * math.cos(angle + arrow_open_angle), y2 - arrow_len * math.sin(angle + arrow_open_angle)),
+                    QPointF(x2 - arrow_len * math.cos(angle - arrow_open_angle), y2 - arrow_len * math.sin(angle - arrow_open_angle)),
+                ]
+                painter.drawConvexPolygon(points)
+
+            if weight != -1:
+                brush = painter.brush()
+                brush.setColor(QColor(Qt.white))
+                brush.setStyle(Qt.SolidPattern)
+                painter.setBrush(brush)
+                painter.drawRect(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18)
+
+                font = QFont("Arial", 12)
+                painter.setFont(font)
+                painter.drawText(QRectF(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18), Qt.AlignCenter, str(weight))
+
+        painter.end()
+
+    def paintEvent(self, event):
+        #painter = QPainter(self)
+        self.DrawFrame()
+        if (self.start_vertex != -1):
+            self.DrawEdge(self, self.vertices[self.start_vertex][0], self.vertices[self.start_vertex][1], self.cursor_pos[0], self.cursor_pos[1])
+        self.DrawEdges()
+        self.DrawVertices()
+        #painter.end()
 
     def index_changed(self, s):
         if s == 0:
@@ -143,188 +287,46 @@ class Ui_MainWindow(QMainWindow):
         if self.parse_matrix_mode == "inc":
             self.parse_incidence_matrix()
 
-    def toggle_edge_mode(self):
-        if self.edge_mode == "edge":
-            self.edge_mode_button.config(text="Рисование дуг")
-            self.edge_mode = "arc"
-            return
-
-        if self.edge_mode == "arc":
-            self.edge_mode_button.config(text="Рисование ребер")
-            self.edge_mode = "edge"
-            return
-
-        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue", width=3)
-        self.vertices.append(vertex_id)
-        vertex_index = len(self.vertices)
-        label_id = self.canvas.create_text(x, y, text=str(vertex_index), fill="black", font=("Arial", 12))
-        if not self.adjacency_matrix:
-            self.adjacency_matrix = [[0]]
-        else:
-            for row in self.adjacency_matrix:
-                row.append(0)
-            self.adjacency_matrix.append([0] * len(self.adjacency_matrix[0]))
-
-        if self.start_vertex is not None:
-            end_vertex = vertex_id
-            self.finish_edge_context(end_vertex)
-
-    def finish_edge_context(self, end_vertex, weight=None):
-        x, y = self.canvas.coords(end_vertex)[:2]
-        start_x = (self.canvas.coords(self.start_vertex)[0] + self.canvas.coords(self.start_vertex)[2]) / 2
-        start_y = (self.canvas.coords(self.start_vertex)[1] + self.canvas.coords(self.start_vertex)[3]) / 2
-        end_x = (self.canvas.coords(end_vertex)[0] + self.canvas.coords(end_vertex)[2]) / 2
-        end_y = (self.canvas.coords(end_vertex)[1] + self.canvas.coords(end_vertex)[3]) / 2
-        vertex_radius = 15
-        angle = math.atan2(end_y - start_y, end_x - start_x)
-        start_x = start_x + vertex_radius * math.cos(angle)
-        start_y = start_y + vertex_radius * math.sin(angle)
-        end_x = end_x - vertex_radius * math.cos(angle)
-        end_y = end_y - vertex_radius * math.sin(angle)
-        weight = self.ask_for_weight()
-        if self.edge_mode == "arc":
-            if self.start_vertex == end_vertex:
-                loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
-                                                 outline="lightblue", width=3)
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                text_x = x + -20 * math.cos(math.radians(20))
-                text_y = y + -20 * math.sin(math.radians(20))
-                if weight is not None:
-                    self.canvas.create_text(text_x, text_y, text=weight, fill="black", font=("Arial", 10))
-                else:
-                    weight = 1
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[vertex_index][vertex_index] = weight
-            else:
-                line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", arrowshape=(15, 20, 5), width=3)
-                self.edges.append(line_id)
-                start_vertex_index = self.vertices.index(self.start_vertex)
-                end_vertex_index = self.vertices.index(end_vertex)
-                if weight is not None:
-                    label_x, label_y = (start_x + end_x) / 2, (start_y + end_y) / 2
-                    label = self.canvas.create_text(label_x, label_y, text=str(weight), fill="black", font=("Arial", 10))
-                    text_width = self.canvas.bbox(label)[2] - self.canvas.bbox(label)[0]
-                    rect_x1, rect_y1, rect_x2, rect_y2 = label_x - text_width / 2 - 5, label_y - 10, label_x + text_width / 2 + 5, label_y + 10
-                    rectangle = self.canvas.create_rectangle(rect_x1, rect_y1, rect_x2, rect_y2, fill="lightblue", outline="lightblue")
-                    self.canvas.tag_lower(rectangle, label)
-                else:
-                    weight = 1
-                self.adjacency_matrix[start_vertex_index][end_vertex_index] = weight
-            self.start_vertex = None
-            if self.context_menu:
-                self.context_menu.destroy()
-
-        elif self.edge_mode == "edge":
-            if self.start_vertex == end_vertex:
-                loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                text_x = x + -20 * math.cos(math.radians(20))
-                text_y = y + -20 * math.sin(math.radians(20))
-                if weight is not None:
-                    self.canvas.create_text(text_x, text_y, text=weight, fill="black", font=("Arial", 10))
-                else:
-                    weight = 1
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[vertex_index][vertex_index] = weight
-            else:
-                line_id = self.canvas.create_line(
-                    start_x, start_y, end_x, end_y, fill="lightblue", width=3
-                )
-                if weight is not None:
-                    label_x, label_y = (start_x + end_x) / 2, (start_y + end_y) / 2
-                    label = self.canvas.create_text(label_x, label_y, text=str(weight), fill="black", font=("Arial", 10))
-                    text_width = self.canvas.bbox(label)[2] - self.canvas.bbox(label)[0]
-                    rect_x1, rect_y1, rect_x2, rect_y2 = label_x - text_width / 2 - 5, label_y - 10, label_x + text_width / 2 + 5, label_y + 10
-                    rectangle = self.canvas.create_rectangle(rect_x1, rect_y1, rect_x2, rect_y2, fill="lightblue", outline="lightblue")
-                    self.canvas.tag_lower(rectangle, label)
-                else:
-                    weight = 1
-                start_vertex_index = self.vertices.index(self.start_vertex)
-                end_vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[start_vertex_index][end_vertex_index] = weight
-                self.adjacency_matrix[end_vertex_index][start_vertex_index] = weight
-
-            self.start_vertex = None
-            if self.context_menu:
-                self.context_menu.destroy()
-
     def ask_for_weight(self):
-        weight_str, ok = QInputDialog.getText(self,'Weight','Введите вес ребра:')
-        if (ok):
+        if self.dialog.exec():
+            weight, type = self.dialog.getInputs()
             try:
-                weight = int(weight_str)
-                return weight
+                weight = int(weight)
+                return [weight, type]
             except ValueError:
-                return None
+                return [None, -1]
+        return [None, -1]
 
-    def drag_vertex(self, event):
-        x, y = event.x, event.y
-        item = self.canvas.find_closest(x, y)
+    def end_edge(self, start_vertex, end_vertex):
+        weight, type = self.ask_for_weight()
+        if weight != None:
+            for i, edge in enumerate(self.edges):
+                if (edge[0] == start_vertex and edge[1] == end_vertex) or (edge[1] == start_vertex and edge[0] == end_vertex and edge[3] == 1):
+                    reply = QMessageBox.question(self, 'Вопрос', "Вы уверены что хотите перезаписать связь?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        self.edges[i] = [start_vertex, end_vertex, weight, type]
+                        return
 
-        if item and item[0] in self.vertices:
-            vertex_id = item[0]
-            text_id = self.get_text_id_for_vertex(vertex_id)
-            self.canvas.coords(vertex_id, x - 18, y - 18, x + 18, y + 18)
-            self.canvas.coords(text_id, x, y)
-            self.redraw_edges()
-
-    def redraw_edges(self):
-        for edge_id in self.edges:
-            self.canvas.delete(edge_id)
-        self.edges = []
-
-        for i, start_vertex in enumerate(self.vertices):
-            for j, end_vertex in enumerate(self.vertices):
-                if (self.adjacency_matrix[i][j] != 1):
-                    continue
-
-                start_x, start_y = self.get_vertex_center(start_vertex)
-                end_x, end_y = self.get_vertex_center(end_vertex)
-                x, y = self.canvas.coords(end_vertex)[:2]
-
-                vertex_radius = 15
-                angle = math.atan2(end_y - start_y, end_x - start_x)
-                start_x = start_x + vertex_radius * math.cos(angle)
-                start_y = start_y + vertex_radius * math.sin(angle)
-                end_x = end_x - vertex_radius * math.cos(angle)
-                end_y = end_y - vertex_radius * math.sin(angle)
-
-                if start_vertex == end_vertex:
-                    loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, tart=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
-                    self.edges.append(loop_id)
-                else:
-                    if (self.adjacency_matrix[i][j] == self.adjacency_matrix[j][i]):
-                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, fill="lightblue", width=3)
-                    else:
-                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", width=3)
-
-                    self.edges.append(line_id)
+            self.edges.append([start_vertex, end_vertex, weight, type])
 
     def clear_graph(self):
-        #self.canvas.delete("all")
-        self.imageBackground.fill(Qt.transparent)
-        self.DrawFrame()
-        self.update()
         self.vertices = []
         self.edges = []
-        self.start_vertex = None
+        self.start_vertex = -1
+        self.dragged_vertex_index = -1
         self.TextOutput.setText("")
+        self.update()
 
     def display_adjacency_matrix(self):
         if len(self.vertices) == 0:
             self.TextOutput.setText("Пустой граф")
             return
         
-        adj_matrix = [[0] * len(self.vertices)] * len(self.vertices)
+        adj_matrix = [[0 for i in range(len(self.vertices))] for j in range(len(self.vertices))]
         for edge in self.edges:
-            if edge[3] == 0:
-                adj_matrix[edge[0]][edge[1]] = edge[2]
-            else:
+            if edge[3] == 1:
                 adj_matrix[edge[1]][edge[0]] = edge[2]
+            adj_matrix[edge[0]][edge[1]] = edge[2]
         
         max_width = max(len(str(entry)) for row in adj_matrix for entry in row)
         output_text = ""
@@ -338,10 +340,14 @@ class Ui_MainWindow(QMainWindow):
             self.TextOutput.setText("Пустой граф")
             return
 
-        incidence_matrix = [[0] * len(self.edges)] * len(self.vertices)
+        incidence_matrix = [[0 for i in range(len(self.edges))] for j in range(len(self.vertices))]
         for i, edge in enumerate(self.edges):
             if edge[3] == 0:
-                incidence_matrix[i][edge[0]] = edge[2]
+                incidence_matrix[edge[1]][i] = -edge[2]
+                incidence_matrix[edge[0]][i] = edge[2]
+            if edge[3] == 1:
+                incidence_matrix[edge[1]][i] = edge[2]
+                incidence_matrix[edge[0]][i] = edge[2]
 
         max_width = max(len(str(entry)) for row in incidence_matrix for entry in row)
         output_text = ""
@@ -351,7 +357,7 @@ class Ui_MainWindow(QMainWindow):
         self.TextOutput.setText(output_text)
 
     def create_graph(self, vertices_count):
-        center_x, center_y = self.imageBackground.size().width() / 2 + 15, self.imageBackground.size().height() / 2 + 15
+        center_x, center_y = 700 / 2 + 15, 700 / 2 + 15
         radius = center_x / 2
         for i in range(vertices_count):
             self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
@@ -387,8 +393,6 @@ class Ui_MainWindow(QMainWindow):
                         for k, edge in enumerate(self.edges):
                             if edge[0] == j and edge[1] == i:
                                 self.edges[k][3] = 1
-        print(self.vertices)
-        print(self.edges)
 
     def parse_incidence_matrix(self):
         lines = self.TextOutput.toPlainText().strip().split("\n")

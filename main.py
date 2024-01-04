@@ -1,490 +1,384 @@
-import tkinter as tk
-from tkinter import ttk
-from tkinter import simpledialog
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 import math
-import PyQt5
 
-class GraphDrawerApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Graph Drawer")
-        root.geometry("1200x850")
+import datetime
 
-        self.canvas = tk.Canvas(root, bg="white", width=700, height=700)
-        self.canvas.grid(row=0, column=0, padx=10, pady=10)
+class InputDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        layout = QFormLayout(self)
+        
+        self.input = QLineEdit(self)
+        layout.addRow("Ведите вес", self.input)
+
+        self.comboBox = QComboBox()
+        self.comboBox.addItem("Дуга")
+        self.comboBox.addItem("Ребро")
+        layout.addWidget(self.comboBox)
+        
+        layout.addWidget(buttonBox)
+        
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+    
+    def getInputs(self):
+        return [self.input.text(), self.comboBox.currentIndex()]
+
+class Ui_MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setupUi()
 
         self.vertices = []
         self.edges = []
-        self.adjacency_matrix = []
-
-        self.canvas.bind("<Button-1>", self.create_vertex)
-        self.canvas.bind("<Button-3>", self.show_context_menu)
-        self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
-
-        adjacency_button = ttk.Button(root, text="Матрица смежности", command=lambda: (self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
-        adjacency_button.place(x=50, y=750, width=210, height=35)
-
-        incidence_button = ttk.Button(root, text="Матрица инцидентности", command=lambda: (self.display_incidence_matrix(), self.display_incidence_matrix_label()))
-        incidence_button.place(x=290, y=750, width=210, height=35)
-
-        clear_button = ttk.Button(root, text="Очистить граф", command=self.clear_graph)
-        clear_button.place(x=530, y=750, width=140, height=35)
-
-        self.mode_button = ttk.Button(root, text="Конструктор вершин", command=self.toggle_mode)
-        self.mode_button.place(x=870, y=780, width=185, height=35)
-
-        self.text_output = tk.Text(root, wrap=tk.WORD, width=40, height=10, font=("Courier", 12))
-        self.text_output.place(x=760, y=15, width=380, height=300)
-
-        self.edge_mode_button = ttk.Button(root, text="Рисование ребер", command=self.toggle_edge_mode)
-        self.edge_mode_button.place(x=870, y=730, width=185, height=35)
-
-        style = ttk.Style()
-        style.configure("TButton", padding=(10, 5), font="Helvetica 12", foreground="black", background="lightblue")
-
-        self.matrix_type_var = tk.StringVar()
-        self.matrix_type_var.set("Матрица смежности")
-        matrix_type_combobox = ttk.Combobox(root, textvariable=self.matrix_type_var, values=["Матрица смежности", "Матрица инцидентности"], state="readonly",
-                                            takefocus=False, font=("Helvetica", 12))
-        matrix_type_combobox.place(x=760, y=335, width=200, height=35)
-        matrix_type_combobox["style"] = "TCombobox"
-
-        build_graph_button = ttk.Button(root, text="Построить граф", command=self.build_graph)
-        build_graph_button.place(x=990, y=335, width=150, height=35)
-        build_graph_button["style"] = "TButton"
-
-        self.text_output.bind("<Button-3>", self.show_text_context_menu)
-        self.text_context_menu = tk.Menu(root, tearoff=0)
-        self.text_context_menu.add_command(label="Копировать", command=self.copy_text)
-        self.text_context_menu.add_command(label="Вставить", command=self.paste_text)
-
-        self.start_vertex = None
-        self.context_menu = None
-        self.mode = "add"
         self.edge_mode = "edge"
+        self.matrix_weight_mode = "no_weight"
+        self.parse_matrix_mode = "adj"
+        self.add_mode = "edge"
 
-        self.edges = []
+        self.vertex_radius = 18
+        self.start_vertex = -1
+        self.dragged_vertex_index = -1
+        self.cursor_pos = [0, 0]
+
+        self.setupUi()
+        self.setupButtons()
+        self.show()
+
+        self.toggle_add_mode()
+
+    def setupUi(self):
+        self.dialog = InputDialog(self)
+
+        self.setObjectName("MainWindow")
+        self.resize(1200, 850)
+        self.setWindowTitle("Graph Drawer")
+        self.centralwidget = QWidget(self)
+
+        self.DisplayAdjMatrixButton = QPushButton(self.centralwidget, text = "Матрица смежности")
+        self.DisplayAdjMatrixButton.setGeometry(QRect(50, 750, 210, 35))
+
+        self.DisplayIncMatrixButton = QPushButton(self.centralwidget, text = "Матрица инцидентности")
+        self.DisplayIncMatrixButton.setGeometry(QRect(290, 750, 210, 35))
+
+        self.ClearButton = QPushButton(self.centralwidget, text = "Очистить поле")
+        self.ClearButton.setGeometry(QRect(530, 750, 140, 35))
+
+        self.VertexModeButton = QPushButton(self.centralwidget, text = "Конструктор вершин")
+        self.VertexModeButton.setGeometry(QRect(870, 780, 185, 35))
+
+        self.EdgeModeButton = QPushButton(self.centralwidget, text = "Рисование связей")
+        self.EdgeModeButton.setGeometry(QRect(870, 730, 185, 35))
+
+        self.TextOutput = QTextEdit(self.centralwidget)
+        self.TextOutput.setGeometry(QRect(760, 15, 380, 300))
+
+        self.BuildGraphButton = QPushButton(self.centralwidget, text = "Простроить граф")
+        self.BuildGraphButton.setGeometry(QRect(990, 335, 150, 35))
+
+        self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
+        self.InputMatrixSelectorCombo.addItems(["Матрица смежности", "Матрица инцидентности"])
+        self.InputMatrixSelectorCombo.setGeometry(QRect(760, 335, 200, 35))
+
+        # css?
+        #self.InputMatrixSelectorCombo.setObjectName("Something")
+
+        self.setCentralWidget(self.centralwidget)
+
+        # self.menubar = QMenuBar(self)
+        # self.menubar.setGeometry(QRect(0, 0, 1200, 21))
+        # self.menubar.setObjectName("menubar")
+        # self.setMenuBar(self.menubar)
+        # self.statusbar = QStatusBar(self)
+        # self.statusbar.setObjectName("statusbar")
+        # self.setStatusBar(self.statusbar)
+        #self.retranslateUi()
+
+        QMetaObject.connectSlotsByName(self)
+
+    def setupButtons(self):
+        self.DisplayAdjMatrixButton.clicked.connect(self.display_adjacency_matrix)
+        self.DisplayIncMatrixButton.clicked.connect(self.display_incidence_matrix)
+
+        self.EdgeModeButton.clicked.connect(self.toggle_add_mode)
+        self.VertexModeButton.clicked.connect(self.toggle_add_mode)
+
+        self.ClearButton.clicked.connect(self.clear_graph)
+
+        self.InputMatrixSelectorCombo.currentIndexChanged.connect(self.index_changed)
+        self.BuildGraphButton.clicked.connect(self.build_graph)
+
+    # def closeEvent(self, event):
+    #     reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()
+    #     else:
+    #         event.ignore()
+
+    def warningPopup(self, title, _text):
+        QMessageBox.question(self, title, _text, QMessageBox.Ok, QMessageBox.Ok)
+
+    def toggle_add_mode(self):
+        if (self.add_mode == "vertex"):
+            self.EdgeModeButton.setStyleSheet("background-color: yellow")
+            self.VertexModeButton.setStyleSheet("background-color: white")
+            self.add_mode = "edge"
+        elif (self.add_mode == "edge"):
+            self.VertexModeButton.setStyleSheet("background-color: yellow")
+            self.EdgeModeButton.setStyleSheet("background-color: white")
+            self.add_mode = "vertex"
+
+    def mousePressEvent(self, event):
+        if (15 < event.x() < 700 and 15 < event.y() < 700):
+            if (self.add_mode == "vertex"):
+                i = 0
+                while i < len(self.vertices):
+                    if (abs(self.vertices[i][0] - event.x()) < self.vertex_radius and abs(self.vertices[i][1] - event.y()) < self.vertex_radius):
+                        self.dragged_vertex_index = i
+                        break
+                    i += 1
+                else:
+                    #self.DrawVertex(self, event.x(), event.y(), str(len(self.vertices) + 1))
+                    self.vertices.append([event.x(), event.y(), 1])
+                    self.update()
+            if (self.add_mode == "edge"):
+                for i, vertex in enumerate(self.vertices):
+                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
+                        self.start_vertex = i
+
+    def mouseMoveEvent(self, event):
+        if (15 < event.x() < 700 and 15 < event.y() < 700):
+            if (self.dragged_vertex_index != -1):
+                self.vertices[self.dragged_vertex_index][0] = event.x()
+                self.vertices[self.dragged_vertex_index][1] = event.y()
+
+            if (self.start_vertex != -1):
+                self.cursor_pos = [event.x(), event.y()]
+
+            self.update()
+        else:
+            self.dragged_vertex_index = -1
+            self.start_vertex = -1
+
+    def mouseReleaseEvent(self, event):
+        if (self.start_vertex != -1):
+            for i, vertex in enumerate(self.vertices):
+                if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
+                    self.end_edge(self.start_vertex, i)
+            
+        self.dragged_vertex_index = -1
+        self.start_vertex = -1
+        self.update()
+
+    def DrawFrame(self):
+        painter = QPainter(self)
+        pen = QPen(QColor(120, 120, 120), 1, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        painter.setPen(pen)
+
+        painter.drawLine(15, 15, 700, 15)
+        painter.drawLine(700, 15, 700, 700)
+        painter.drawLine(700, 700, 15, 700)
+        painter.drawLine(15, 700, 15, 15)
+        painter.end()
+
+    def DrawVertices(self):
+        for i, vertex in enumerate(self.vertices):
+            self.DrawVertex(self, vertex[0], vertex[1], str(i + 1))
+
+    def DrawVertex(self, image, x, y, index):
+        painter = QPainter(image)
+
+        pen = painter.pen()
+        pen.setColor(QColor(Qt.black))
+        pen.setWidth(2)
+        painter.setPen(pen)
+
+        brush = painter.brush()
+        brush.setColor(QColor(Qt.white))
+        brush.setStyle(Qt.SolidPattern)
+        painter.setBrush(brush)
+
+        painter.drawEllipse(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2))
+
+        font = QFont("Arial", 12)
+        painter.setFont(font)
+        painter.drawText(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2), Qt.AlignCenter, index)
+
+        painter.end()
+
+    def DrawEdges(self):
+        for edge in self.edges:
+            self.DrawEdge(self, self.vertices[edge[0]][0], self.vertices[edge[0]][1], self.vertices[edge[1]][0], self.vertices[edge[1]][1], edge[2], edge[3])
+    
+    def DrawEdge(self, image, x1, y1, x2, y2, weight = -1, type = 1):
+        painter = QPainter(image)
+        pen = QPen(QColor(80, 80, 120), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        painter.setPen(pen)
+
+        if (x1 == x2 and y1 == y2):
+            painter.drawArc(QRect(x1 - self.vertex_radius * 2, y1 - self.vertex_radius * 2, self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
+
+            if weight != -1:
+                brush = painter.brush()
+                brush.setColor(QColor(Qt.white))
+                brush.setStyle(Qt.SolidPattern)
+                painter.setBrush(brush)
+                painter.drawRect(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18)
+                
+                font = QFont("Arial", 12)
+                painter.setFont(font)
+                painter.drawText(QRectF(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18), Qt.AlignCenter, str(weight))
+        else:
+            painter.drawLine(int(x1),int(y1),int(x2),int(y2))
+
+            if (type == 0):
+                angle = math.atan2(y2 - y1, x2 - x1)
+                x2 = x2 - self.vertex_radius * math.cos(angle)
+                y2 = y2 - self.vertex_radius * math.sin(angle)
+                arrow_len = 15
+                arrow_open_angle = math.pi / 10
+                brush = painter.brush()
+                brush.setColor(QColor(80, 80, 120))
+                brush.setStyle(Qt.SolidPattern)
+                painter.setBrush(brush)
+                points = [
+                    QPointF(x2, y2),
+                    QPointF(x2 - arrow_len * math.cos(angle + arrow_open_angle), y2 - arrow_len * math.sin(angle + arrow_open_angle)),
+                    QPointF(x2 - arrow_len * math.cos(angle - arrow_open_angle), y2 - arrow_len * math.sin(angle - arrow_open_angle)),
+                ]
+                painter.drawConvexPolygon(points)
+
+            if weight != -1:
+                brush = painter.brush()
+                brush.setColor(QColor(Qt.white))
+                brush.setStyle(Qt.SolidPattern)
+                painter.setBrush(brush)
+                painter.drawRect(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18)
+
+                font = QFont("Arial", 12)
+                painter.setFont(font)
+                painter.drawText(QRectF(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18), Qt.AlignCenter, str(weight))
+
+        painter.end()
+
+    def paintEvent(self, event):
+        #painter = QPainter(self)
+        self.DrawFrame()
+        if (self.start_vertex != -1):
+            self.DrawEdge(self, self.vertices[self.start_vertex][0], self.vertices[self.start_vertex][1], self.cursor_pos[0], self.cursor_pos[1])
+        self.DrawEdges()
+        self.DrawVertices()
+        #painter.end()
+
+    def index_changed(self, s):
+        if s == 0:
+            self.parse_matrix_mode = "adj"
+        if s == 1:
+            self.parse_matrix_mode = "inc"
 
     def build_graph(self):
-        matrix_type = self.matrix_type_var.get()
-        if matrix_type == "  Матрица смежности":
+        if self.parse_matrix_mode == "adj":
             self.parse_adjacency_matrix()
-        elif matrix_type == "Матрица инцидентности":
+        if self.parse_matrix_mode == "inc":
             self.parse_incidence_matrix()
 
-    def show_text_context_menu(self, event):
-        self.text_context_menu.post(event.x_root, event.y_root)
-
-    def open_poup_window(self, title, _text):
-        win = tk.Toplevel()
-        win.wm_title(title)
-        l = tk.Label(win, text=_text)
-        l.grid(row=0, column=0)
-        b = ttk.Button(win, text="Понятно", command=win.destroy)
-        b.grid(row=1, column=0)
-
-    def copy_text(self):
-        selected_text = self.text_output.get(tk.SEL_FIRST, tk.SEL_LAST)
-        self.root.clipboard_clear()
-        self.root.clipboard_append(selected_text)
-        self.root.update()
-
-    def paste_text(self):
-        clipboard_data = self.root.clipboard_get()
-        self.text_output.insert(tk.INSERT, clipboard_data)
-
-    def toggle_mode(self):
-        if self.mode == "add":
-            self.mode_button.config(text="Передвижение вершин")
-            self.mode = "drag"
-            self.canvas.unbind("<Button-1>")
-            self.canvas.unbind("<Button-3>")
-            self.canvas.unbind("<ButtonRelease-1>")
-            self.canvas.bind("<B1-Motion>", self.drag_vertex)
-            return
-
-        if self.mode == "drag":
-            self.mode_button.config(text="Конструктор вершин")
-            self.mode = "add"
-            self.canvas.bind("<Button-1>", self.create_vertex)
-            self.canvas.bind("<Button-3>", self.show_context_menu)
-            self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
-            self.canvas.unbind("<B1-Motion>")
-            return
-
-    def toggle_edge_mode(self):
-        if self.edge_mode == "edge":
-            self.edge_mode_button.config(text="Рисование дуг")
-            self.edge_mode = "arc"
-            return
-
-        if self.edge_mode == "arc":
-            self.edge_mode_button.config(text="Рисование ребер")
-            self.edge_mode = "edge"
-            return
-
-    def create_vertex(self, event):
-        x, y = event.x, event.y
-        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue", width=3)
-        self.vertices.append(vertex_id)
-        vertex_index = len(self.vertices)
-        label_id = self.canvas.create_text(x, y, text=str(vertex_index), fill="black", font=("Arial", 12))
-        if not self.adjacency_matrix:
-            self.adjacency_matrix = [[0]]
-        else:
-            for row in self.adjacency_matrix:
-                row.append(0)
-            self.adjacency_matrix.append([0] * len(self.adjacency_matrix[0]))
-
-        if self.start_vertex is not None:
-            end_vertex = vertex_id
-            self.finish_edge_context(end_vertex)
-
-    def show_context_menu(self, event):
-        x, y = event.x, event.y
-        item = self.canvas.find_closest(x, y)
-
-        if item and item[0] in self.vertices:
-            self.start_vertex = item[0]
-            vertex_index = self.vertices.index(self.start_vertex) + 1
-            self.context_menu = tk.Menu(self.root, tearoff=0)
-            for vertex in self.vertices:
-                dest_vertex_index = self.vertices.index(vertex) + 1
-                self.context_menu.add_command(label=f"До {dest_vertex_index}", command=lambda v=vertex: self.finish_edge_context(v))
-            self.context_menu.post(event.x_root, event.y_root)
-
-    def finish_edge_context(self, end_vertex, weight=None):
-        x, y = self.canvas.coords(end_vertex)[:2]
-        start_x = (self.canvas.coords(self.start_vertex)[0] + self.canvas.coords(self.start_vertex)[2]) / 2
-        start_y = (self.canvas.coords(self.start_vertex)[1] + self.canvas.coords(self.start_vertex)[3]) / 2
-        end_x = (self.canvas.coords(end_vertex)[0] + self.canvas.coords(end_vertex)[2]) / 2
-        end_y = (self.canvas.coords(end_vertex)[1] + self.canvas.coords(end_vertex)[3]) / 2
-        vertex_radius = 15
-        angle = math.atan2(end_y - start_y, end_x - start_x)
-        start_x = start_x + vertex_radius * math.cos(angle)
-        start_y = start_y + vertex_radius * math.sin(angle)
-        end_x = end_x - vertex_radius * math.cos(angle)
-        end_y = end_y - vertex_radius * math.sin(angle)
-        weight = self.ask_for_weight()
-        if self.edge_mode == "arc":
-            if self.start_vertex == end_vertex:
-                loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
-                                                 outline="lightblue", width=3)
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                text_x = x + -20 * math.cos(math.radians(20))
-                text_y = y + -20 * math.sin(math.radians(20))
-                if weight is not None:
-                    self.canvas.create_text(text_x, text_y, text=weight, fill="black", font=("Arial", 10))
-                else:
-                    weight = 1
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[vertex_index][vertex_index] = weight
-            else:
-                line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", arrowshape=(15, 20, 5), width=3)
-                self.edges.append(line_id)
-                start_vertex_index = self.vertices.index(self.start_vertex)
-                end_vertex_index = self.vertices.index(end_vertex)
-                if weight is not None:
-                    label_x, label_y = (start_x + end_x) / 2, (start_y + end_y) / 2
-                    label = self.canvas.create_text(label_x, label_y, text=str(weight), fill="black", font=("Arial", 10))
-                    text_width = self.canvas.bbox(label)[2] - self.canvas.bbox(label)[0]
-                    rect_x1, rect_y1, rect_x2, rect_y2 = label_x - text_width / 2 - 5, label_y - 10, label_x + text_width / 2 + 5, label_y + 10
-                    rectangle = self.canvas.create_rectangle(rect_x1, rect_y1, rect_x2, rect_y2, fill="lightblue", outline="lightblue")
-                    self.canvas.tag_lower(rectangle, label)
-                else:
-                    weight = 1
-                self.adjacency_matrix[start_vertex_index][end_vertex_index] = weight
-            self.start_vertex = None
-            if self.context_menu:
-                self.context_menu.destroy()
-
-        elif self.edge_mode == "edge":
-            if self.start_vertex == end_vertex:
-                loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                text_x = x + -20 * math.cos(math.radians(20))
-                text_y = y + -20 * math.sin(math.radians(20))
-                if weight is not None:
-                    self.canvas.create_text(text_x, text_y, text=weight, fill="black", font=("Arial", 10))
-                else:
-                    weight = 1
-                self.edges.append(loop_id)
-                vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[vertex_index][vertex_index] = weight
-            else:
-                line_id = self.canvas.create_line(
-                    start_x, start_y, end_x, end_y, fill="lightblue", width=3
-                )
-                if weight is not None:
-                    label_x, label_y = (start_x + end_x) / 2, (start_y + end_y) / 2
-                    label = self.canvas.create_text(label_x, label_y, text=str(weight), fill="black", font=("Arial", 10))
-                    text_width = self.canvas.bbox(label)[2] - self.canvas.bbox(label)[0]
-                    rect_x1, rect_y1, rect_x2, rect_y2 = label_x - text_width / 2 - 5, label_y - 10, label_x + text_width / 2 + 5, label_y + 10
-                    rectangle = self.canvas.create_rectangle(rect_x1, rect_y1, rect_x2, rect_y2, fill="lightblue", outline="lightblue")
-                    self.canvas.tag_lower(rectangle, label)
-                else:
-                    weight = 1
-                start_vertex_index = self.vertices.index(self.start_vertex)
-                end_vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[start_vertex_index][end_vertex_index] = weight
-                self.adjacency_matrix[end_vertex_index][start_vertex_index] = weight
-
-            self.start_vertex = None
-            if self.context_menu:
-                self.context_menu.destroy()
     def ask_for_weight(self):
-        weight_str = simpledialog.askstring("Weight", "Введите вес ребра:")
-        try:
-            weight = int(weight_str)
-            return weight
-        except ValueError:
-            return None
-    def finish_edge(self, event):
-        if self.context_menu:
-            self.context_menu.destroy()
+        if self.dialog.exec():
+            weight, type = self.dialog.getInputs()
+            try:
+                weight = int(weight)
+                return [weight, type]
+            except ValueError:
+                return [None, -1]
+        return [None, -1]
 
-    def drag_vertex(self, event):
-        x, y = event.x, event.y
-        item = self.canvas.find_closest(x, y)
+    def end_edge(self, start_vertex, end_vertex):
+        weight, type = self.ask_for_weight()
+        if weight != None:
+            for i, edge in enumerate(self.edges):
+                if (edge[0] == start_vertex and edge[1] == end_vertex) or (edge[1] == start_vertex and edge[0] == end_vertex and edge[3] == 1):
+                    reply = QMessageBox.question(self, 'Вопрос', "Вы уверены что хотите перезаписать связь?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        self.edges[i] = [start_vertex, end_vertex, weight, type]
+                        return
 
-        if item and item[0] in self.vertices:
-            vertex_id = item[0]
-            text_id = self.get_text_id_for_vertex(vertex_id)
-            self.canvas.coords(vertex_id, x - 18, y - 18, x + 18, y + 18)
-            self.canvas.coords(text_id, x, y)
-            self.redraw_edges()
-
-    def redraw_edges(self):
-        for edge_id in self.edges:
-            self.canvas.delete(edge_id)
-        self.edges = []
-
-        for i, start_vertex in enumerate(self.vertices):
-            for j, end_vertex in enumerate(self.vertices):
-                if (self.adjacency_matrix[i][j] != 1):
-                    continue
-
-                start_x, start_y = self.get_vertex_center(start_vertex)
-                end_x, end_y = self.get_vertex_center(end_vertex)
-                x, y = self.canvas.coords(end_vertex)[:2]
-
-                vertex_radius = 15
-                angle = math.atan2(end_y - start_y, end_x - start_x)
-                start_x = start_x + vertex_radius * math.cos(angle)
-                start_y = start_y + vertex_radius * math.sin(angle)
-                end_x = end_x - vertex_radius * math.cos(angle)
-                end_y = end_y - vertex_radius * math.sin(angle)
-
-                if start_vertex == end_vertex:
-                    loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, tart=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
-                    self.edges.append(loop_id)
-                else:
-                    if (self.adjacency_matrix[i][j] == self.adjacency_matrix[j][i]):
-                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, fill="lightblue", width=3)
-                    else:
-                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", width=3)
-
-                    self.edges.append(line_id)
-
-    def get_vertex_center(self, vertex_id):
-        x, y = self.canvas.coords(vertex_id)[0:2]
-        center_x = x + 18
-        center_y = y + 18
-        return center_x, center_y
-
-    def get_text_id_for_vertex(self, vertex_id):
-        index = self.vertices.index(vertex_id)
-        text_id = self.vertices[index] + 1
-        return text_id
+            self.edges.append([start_vertex, end_vertex, weight, type])
 
     def clear_graph(self):
-        self.canvas.delete("all")
         self.vertices = []
         self.edges = []
-        self.adjacency_matrix = []
-        self.start_vertex = None
-        self.text_output.delete("1.0", tk.END)
+        self.start_vertex = -1
+        self.dragged_vertex_index = -1
+        self.TextOutput.setText("")
+        self.update()
 
     def display_adjacency_matrix(self):
-        self.text_output.delete("1.0", tk.END)
-
-        if not self.adjacency_matrix:
-            self.text_output.insert(tk.END, "Пустой граф")
+        if len(self.vertices) == 0:
+            self.TextOutput.setText("Пустой граф")
             return
-
-        max_width = max(len(str(entry)) for row in self.adjacency_matrix for entry in row)
-        for i, row in enumerate(self.adjacency_matrix):
-            formatted_row = [f"{entry:>{max_width}}" for entry in row]
-            self.text_output.insert(tk.END, " ".join(formatted_row) + "\n")
-            self.text_output.tag_configure(f"row_{i}", justify="left")
-            self.text_output.tag_add(f"row_{i}", f"{i + 1}.0", f"{i + 1}.end")
-
-    def display_adjacency_matrix_label(self):
-        for widget in self.root.winfo_children():
-            if isinstance(widget, tk.Label):
-                widget.destroy()
-
-        if not self.adjacency_matrix:
-            return
-
-        label_adj_matrix = tk.Label(self.root, text="Матрица смежности", font=("Arial", 14, "bold"))
-        label_adj_matrix.place(x=800, y=415)
-        row_labels = [str(i) for i in range(1, len(self.adjacency_matrix) + 1)]
-        col_labels = [str(i) for i in range(1, len(self.adjacency_matrix[0]) + 1)]
-
-        label_col_num = tk.Label(self.root, text=" ", font=("Arial", 12))
-        label_col_num.place(x=800, y=460)
-
-        for i, col_label in enumerate(col_labels):
-            label_col = tk.Label(self.root, text=col_label, font=("Arial", 12, "bold"))
-            label_col.place(x=830 + i * 30, y=460)
-
-        for i, row in enumerate(self.adjacency_matrix):
-            label_row_num = tk.Label(self.root, text=row_labels[i], font=("Arial", 12, "bold"))
-            label_row_num.place(x=800, y=490 + i * 30)
-
-            for j, value in enumerate(row):
-                label_value = tk.Label(self.root, text=str(value), font=("Arial", 12))
-                label_value.place(x=830 + j * 30, y=490 + i * 30)
-
-    def display_incidence_matrix_label(self):
-        for widget in self.root.winfo_children():
-            if isinstance(widget, tk.Label):
-                widget.destroy()
-
-        incidence_matrix, edge_vertices = self.get_incidence_matrix()
-
-        if not incidence_matrix:
-            return
-
-        label_inc_matrix = tk.Label(self.root, text="Матрица инцидентности", font=("Arial", 14, "bold"))
-        label_inc_matrix.place(x=800, y=415)
-
-        row_labels = [str(i) for i in range(1, len(incidence_matrix) + 1)]
-        col_labels = [f"({edge[0]}, {edge[1]})" for edge in edge_vertices]
-
-        label_col_num = tk.Label(self.root, text=" ", font=("Arial", 12))
-        label_col_num.place(x=800, y=460)
-
-        max_label_width = max(len(label) for label in col_labels)
-
-        for i, col_label in enumerate(col_labels):
-            label_col = tk.Label(self.root, text=col_label, font=("Arial", 12, "bold"))
-            col_x = 820 + i * 60 + (max_label_width - len(col_label)) * 6
-            label_col.place(x=col_x, y=460)
-
-        for i, row in enumerate(incidence_matrix):
-            label_row_num = tk.Label(self.root, text=row_labels[i], font=("Arial", 12, "bold"))
-            label_row_num.place(x=800, y=500 + i * 30, anchor="e")
-
-            for j, value in enumerate(row):
-                label_value = tk.Label(self.root, text=str(value), font=("Arial", 12))
-                col_x = 820 + j * 60 + (max_label_width - len(str(value))) * 3
-                label_value.place(x=col_x, y=500 + i * 30, anchor="w")
+        
+        adj_matrix = [[0 for i in range(len(self.vertices))] for j in range(len(self.vertices))]
+        for edge in self.edges:
+            if edge[3] == 1:
+                adj_matrix[edge[1]][edge[0]] = edge[2]
+            adj_matrix[edge[0]][edge[1]] = edge[2]
+        
+        max_width = max(len(str(entry)) for row in adj_matrix for entry in row)
+        output_text = ""
+        for row in adj_matrix:
+            formatted_row = [f"{entry:>{max_width}}  " for entry in row]
+            output_text += " ".join(formatted_row) + "\n"
+        self.TextOutput.setText(output_text)
 
     def display_incidence_matrix(self):
-        self.text_output.delete("1.0", tk.END)
-        incidence_matrix, edge_vertices = self.get_incidence_matrix()
-        if incidence_matrix:
-            max_width = max(len(str(entry)) for row in incidence_matrix for entry in row)
-            for i, row in enumerate(incidence_matrix):
-                formatted_row = [f"{entry:>{max_width}}" for entry in row]
-                self.text_output.insert(tk.END, " ".join(formatted_row) + "\n")
-                self.text_output.tag_configure(f"row_{i}", justify="left")
-                self.text_output.tag_add(f"row_{i}", f"{i + 1}.0", f"{i + 1}.end")
-        else:
-            self.text_output.insert(tk.END, "Пустой граф")
+        if len(self.vertices) == 0 or len(self.edges) == 0:
+            self.TextOutput.setText("Пустой граф")
+            return
 
-    def get_incidence_matrix(self):
-        if not self.adjacency_matrix:
-            return None, None
-        num_vertices = len(self.adjacency_matrix)
-        num_edges = sum(sum(row) for row in self.adjacency_matrix)
+        incidence_matrix = [[0 for i in range(len(self.edges))] for j in range(len(self.vertices))]
+        for i, edge in enumerate(self.edges):
+            if edge[3] == 0:
+                incidence_matrix[edge[1]][i] = -edge[2]
+                incidence_matrix[edge[0]][i] = edge[2]
+            if edge[3] == 1:
+                incidence_matrix[edge[1]][i] = edge[2]
+                incidence_matrix[edge[0]][i] = edge[2]
 
-        incidence_matrix = [[0] * num_edges for _ in range(num_vertices)]
-        edge_vertices = set()
-
-        edge_index = 0
-        for i in range(num_vertices):
-            for j in range(num_vertices):
-                weight = self.adjacency_matrix[i][j]
-                if weight != 0:
-                    reverse_edge_exists = self.adjacency_matrix[j][i] != 0
-                    if reverse_edge_exists:
-                        if (j + 1, i + 1) not in edge_vertices:
-                            incidence_matrix[i][edge_index] = weight
-                            incidence_matrix[j][edge_index] = weight
-                            edge_vertices.add((i + 1, j + 1))
-                            edge_index += 1
-                    else:
-                        incidence_matrix[j][edge_index] = -weight
-                        incidence_matrix[i][edge_index] = weight
-                        edge_vertices.add((i + 1, j + 1))
-                        edge_index += 1
-
-        k = 0
-        while (k < len(incidence_matrix[0])):
-            has_edge = False
-            for j in range(len(incidence_matrix)):
-                if (incidence_matrix[j][k] != 0):
-                    has_edge = True
-                    break
-            if not has_edge:
-                for j in range(len(incidence_matrix)):
-                    incidence_matrix[j] = incidence_matrix[j][:k] + incidence_matrix[j][k + 1:]
-            else:
-                k += 1
-
-        if edge_index == 0:
-            return None, None
-
-        return incidence_matrix, list(edge_vertices)
-
-    def create_vertex_xy(self, x, y):
-        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue", width=3)
-        self.vertices.append(vertex_id)
-        vertex_index = len(self.vertices)
-        label_id = self.canvas.create_text(x, y, text=str(vertex_index), fill="black", font=("Arial", 12))
-        if not self.adjacency_matrix:
-            self.adjacency_matrix = [[0]]
-        else:
-            for row in self.adjacency_matrix:
-                row.append(0)
-            self.adjacency_matrix.append([0] * len(self.adjacency_matrix[0]))
-        if self.start_vertex is not None:
-            end_vertex = vertex_id
-            self.finish_edge_context(end_vertex)
+        max_width = max(len(str(entry)) for row in incidence_matrix for entry in row)
+        output_text = ""
+        for row in incidence_matrix:
+            formatted_row = [f"{entry:>{max_width}}" for entry in row]
+            output_text += " ".join(formatted_row) + "\n"
+        self.TextOutput.setText(output_text)
 
     def create_graph(self, vertices_count):
-        center_x, center_y = self.canvas.winfo_width() / 2, self.canvas.winfo_height() / 2
+        center_x, center_y = 700 / 2 + 15, 700 / 2 + 15
         radius = center_x / 2
         for i in range(vertices_count):
-            self.create_vertex_xy(center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i))
+            self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
 
     def parse_adjacency_matrix(self):
-        self.canvas.delete("all")
-        self.vertices = []
-        self.edges = []
-        self.adjacency_matrix = []
-        self.start_vertex = None
+        lines = self.TextOutput.toPlainText().strip().split("\n")
 
-        lines = self.text_output.get("1.0", tk.END).strip().split("\n")
+        self.clear_graph()
 
         if len(lines[0]) == 0:
-            self.open_poup_window("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup("Ошибка!", "Формат матрицы неверен")
             return
 
         try:
             matrix = [list(map(int, line.split())) for line in lines]
         except ValueError:
-            self.open_poup_window("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup("Ошибка!", "Формат матрицы неверен")
             return
 
         if any(len(row) != len(matrix) for row in matrix):
-            self.open_poup_window("Ошибка!", "Матрица должна быть квадратной")
+            self.warningPopup("Ошибка!", "Матрица должна быть квадратной")
             return
 
         self.create_graph(len(matrix))
@@ -493,71 +387,69 @@ class GraphDrawerApp:
             for j in range(len(matrix[i])):
                 weight = matrix[i][j]
                 if weight > 0:
-                    self.adjacency_matrix[i][j] = weight
-                    self.start_vertex = self.vertices[i]
-                    end_vertex = self.vertices[j]
-
-                    reverse_edge_exists = matrix[j][i] > 0
-
-                    if reverse_edge_exists:
-                        self.edge_mode = "edge"
-                        self.start_vertex = self.vertices[i]
-                        self.finish_edge_context(end_vertex, weight)
+                    if not [j, i, weight, 0] in self.edges:
+                        self.edges.append([i, j, weight, 0])
                     else:
-                        self.edge_mode = "arc"
-                        self.start_vertex = self.vertices[i]
-                        self.finish_edge_context(end_vertex, weight)
+                        for k, edge in enumerate(self.edges):
+                            if edge[0] == j and edge[1] == i:
+                                self.edges[k][3] = 1
 
     def parse_incidence_matrix(self):
-        self.canvas.delete("all")
-        self.vertices = []
-        self.edges = []
-        self.adjacency_matrix = []
-        self.start_vertex = None
+        lines = self.TextOutput.toPlainText().strip().split("\n")
 
-        lines = self.text_output.get("1.0", tk.END).strip().split("\n")
+        self.clear_graph()
+
         if len(lines[0]) == 0:
-            self.open_poup_window("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup("Ошибка!", "Формат матрицы неверен")
             return
 
         try:
             matrix = [list(map(int, line.split())) for line in lines]
         except ValueError:
-            self.open_poup_window("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup("Ошибка!", "Формат матрицы неверен")
             return
 
         any_row = matrix[0]
         if any(len(row) != len(any_row) for row in matrix):
-            self.open_poup_window("Ошибка!", "Матрица должна быть правильных размеров")
+            self.warningPopup("Ошибка!", "Матрица должна быть правильных размеров")
             return
 
         num_vertices, num_edges = len(matrix), len(matrix[0])
         self.create_graph(num_vertices)
 
         for i in range(num_edges):
-            end_vertex = None
-            matrix_coords = [0, 0]
+            start_vertex = -1
+            ended = False
+            start_weight = 0
             for j in range(num_vertices):
-                if matrix[j][i] == 1 and self.start_vertex != None:
-                    end_vertex = self.vertices[j]
-                    matrix_coords[1] = j
-                    self.edge_mode = "edge"
-                elif matrix[j][i] == 1:
-                    self.start_vertex = self.vertices[j]
-                    matrix_coords[0] = j
-                if matrix[j][i] == -1:
-                    end_vertex = self.vertices[j]
-                    matrix_coords[1] = j
-                    self.edge_mode = "arc"
-            if (end_vertex == None):
-                self.adjacency_matrix[matrix_coords[0]][matrix_coords[0]] = 1
-                self.finish_edge_context(self.start_vertex)
-                continue
-            self.adjacency_matrix[matrix_coords[0]][matrix_coords[1]] = 1
-            self.finish_edge_context(end_vertex)
+                if matrix[j][i] != 0:
+                    if start_vertex == -1:
+                        start_vertex = j
+                        start_weight = matrix[j][i]
+                    else:
+                        if start_weight == matrix[j][i]:
+                            self.edges.append([start_vertex, j, start_weight, 1])
+                        elif start_weight > 0:
+                            self.edges.append([start_vertex, j, start_weight, 0])
+                        else:
+                            self.edges.append([j, start_vertex, -start_weight, 0])
+                        ended = True
+            if(not ended):
+                self.edges.append([start_vertex, start_vertex, start_weight, 0])
+
+    '''def retranslateUi(self):
+        _translate = QCoreApplication.translate
+        self.setWindowTitle(_translate("MainWindow", "Graph Drawer"))
+        self.DisplayAdjMatrixButton.setText(_translate("MainWindow", "Матрица смежности"))
+        self.DisplayIncMatrixButton.setText(_translate("MainWindow", "Матрица инцидентности"))
+        self.ChangeModeButton.setText(_translate("MainWindow", "Конструктор вершин"))
+        self.EdgeModeButton.setText(_translate("MainWindow", "Рисование ребер"))
+        self.ClearButton.setText(_translate("MainWindow", "Очистить поле"))
+        self.BuildGraphButton.setText(_translate("MainWindow", "Простроить граф"))'''
 
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = GraphDrawerApp(root)
-    root.mainloop()
+if __name__ == '__main__':
+    import sys
+    app = QApplication(sys.argv)
+    window = Ui_MainWindow()
+    sys.exit(app.exec_())

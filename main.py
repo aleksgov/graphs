@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import simpledialog
 import math
-
+import PyQt5
 
 class GraphDrawerApp:
     def __init__(self, root):
@@ -20,12 +21,10 @@ class GraphDrawerApp:
         self.canvas.bind("<Button-3>", self.show_context_menu)
         self.canvas.bind("<ButtonRelease-1>", self.finish_edge)
 
-        adjacency_button = ttk.Button(root, text="Матрица смежности", command=lambda: (
-            self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
+        adjacency_button = ttk.Button(root, text="Матрица смежности", command=lambda: (self.display_adjacency_matrix(), self.display_adjacency_matrix_label()))
         adjacency_button.place(x=50, y=750, width=210, height=35)
 
-        incidence_button = ttk.Button(root, text="Матрица инцидентности", command=lambda: (
-            self.display_incidence_matrix(), self.display_incidence_matrix_label()))
+        incidence_button = ttk.Button(root, text="Матрица инцидентности", command=lambda: (self.display_incidence_matrix(), self.display_incidence_matrix_label()))
         incidence_button.place(x=290, y=750, width=210, height=35)
 
         clear_button = ttk.Button(root, text="Очистить граф", command=self.clear_graph)
@@ -44,9 +43,8 @@ class GraphDrawerApp:
         style.configure("TButton", padding=(10, 5), font="Helvetica 12", foreground="black", background="lightblue")
 
         self.matrix_type_var = tk.StringVar()
-        self.matrix_type_var.set("  Матрица смежности")
-        matrix_type_combobox = ttk.Combobox(root, textvariable=self.matrix_type_var,
-                                            values=["  Матрица смежности", "Матрица инцидентности"], state="readonly",
+        self.matrix_type_var.set("Матрица смежности")
+        matrix_type_combobox = ttk.Combobox(root, textvariable=self.matrix_type_var, values=["Матрица смежности", "Матрица инцидентности"], state="readonly",
                                             takefocus=False, font=("Helvetica", 12))
         matrix_type_combobox.place(x=760, y=335, width=200, height=35)
         matrix_type_combobox["style"] = "TCombobox"
@@ -127,14 +125,10 @@ class GraphDrawerApp:
 
     def create_vertex(self, event):
         x, y = event.x, event.y
-        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue",
-                                            width=3)
+        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue", width=3)
         self.vertices.append(vertex_id)
-
         vertex_index = len(self.vertices)
-
         label_id = self.canvas.create_text(x, y, text=str(vertex_index), fill="black", font=("Arial", 12))
-
         if not self.adjacency_matrix:
             self.adjacency_matrix = [[0]]
         else:
@@ -152,17 +146,14 @@ class GraphDrawerApp:
 
         if item and item[0] in self.vertices:
             self.start_vertex = item[0]
-
             vertex_index = self.vertices.index(self.start_vertex) + 1
-
             self.context_menu = tk.Menu(self.root, tearoff=0)
             for vertex in self.vertices:
                 dest_vertex_index = self.vertices.index(vertex) + 1
-                self.context_menu.add_command(label=f"До {dest_vertex_index}",
-                                              command=lambda v=vertex: self.finish_edge_context(v))
+                self.context_menu.add_command(label=f"До {dest_vertex_index}", command=lambda v=vertex: self.finish_edge_context(v))
             self.context_menu.post(event.x_root, event.y_root)
 
-    def finish_edge_context(self, end_vertex):
+    def finish_edge_context(self, end_vertex, weight=None):
         x, y = self.canvas.coords(end_vertex)[:2]
         start_x = (self.canvas.coords(self.start_vertex)[0] + self.canvas.coords(self.start_vertex)[2]) / 2
         start_y = (self.canvas.coords(self.start_vertex)[1] + self.canvas.coords(self.start_vertex)[3]) / 2
@@ -174,52 +165,83 @@ class GraphDrawerApp:
         start_y = start_y + vertex_radius * math.sin(angle)
         end_x = end_x - vertex_radius * math.cos(angle)
         end_y = end_y - vertex_radius * math.sin(angle)
-
+        weight = self.ask_for_weight()
         if self.edge_mode == "arc":
             if self.start_vertex == end_vertex:
-                loop_id = self.canvas.create_arc(
-                    x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
-                    outline="lightblue", width=3
-                )
+                loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
+                                                 outline="lightblue", width=3)
                 self.edges.append(loop_id)
                 vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[vertex_index][vertex_index] = 1
+                text_x = x + -20 * math.cos(math.radians(20))
+                text_y = y + -20 * math.sin(math.radians(20))
+                if weight is not None:
+                    self.canvas.create_text(text_x, text_y, text=weight, fill="black", font=("Arial", 10))
+                else:
+                    weight = 1
+                self.edges.append(loop_id)
+                vertex_index = self.vertices.index(end_vertex)
+                self.adjacency_matrix[vertex_index][vertex_index] = weight
             else:
-                line_id = self.canvas.create_line(
-                    start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", width=3
-                )
+                line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", arrowshape=(15, 20, 5), width=3)
                 self.edges.append(line_id)
                 start_vertex_index = self.vertices.index(self.start_vertex)
                 end_vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[start_vertex_index][end_vertex_index] = 1
-
+                if weight is not None:
+                    label_x, label_y = (start_x + end_x) / 2, (start_y + end_y) / 2
+                    label = self.canvas.create_text(label_x, label_y, text=str(weight), fill="black", font=("Arial", 10))
+                    text_width = self.canvas.bbox(label)[2] - self.canvas.bbox(label)[0]
+                    rect_x1, rect_y1, rect_x2, rect_y2 = label_x - text_width / 2 - 5, label_y - 10, label_x + text_width / 2 + 5, label_y + 10
+                    rectangle = self.canvas.create_rectangle(rect_x1, rect_y1, rect_x2, rect_y2, fill="lightblue", outline="lightblue")
+                    self.canvas.tag_lower(rectangle, label)
+                else:
+                    weight = 1
+                self.adjacency_matrix[start_vertex_index][end_vertex_index] = weight
             self.start_vertex = None
             if self.context_menu:
                 self.context_menu.destroy()
 
         elif self.edge_mode == "edge":
             if self.start_vertex == end_vertex:
-                loop_id = self.canvas.create_arc(
-                    x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC,
-                    outline="lightblue", width=3
-                )
+                loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
                 self.edges.append(loop_id)
                 vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[vertex_index][vertex_index] = 1
+                text_x = x + -20 * math.cos(math.radians(20))
+                text_y = y + -20 * math.sin(math.radians(20))
+                if weight is not None:
+                    self.canvas.create_text(text_x, text_y, text=weight, fill="black", font=("Arial", 10))
+                else:
+                    weight = 1
+                self.edges.append(loop_id)
+                vertex_index = self.vertices.index(end_vertex)
+                self.adjacency_matrix[vertex_index][vertex_index] = weight
             else:
                 line_id = self.canvas.create_line(
                     start_x, start_y, end_x, end_y, fill="lightblue", width=3
                 )
-                self.edges.append(line_id)
+                if weight is not None:
+                    label_x, label_y = (start_x + end_x) / 2, (start_y + end_y) / 2
+                    label = self.canvas.create_text(label_x, label_y, text=str(weight), fill="black", font=("Arial", 10))
+                    text_width = self.canvas.bbox(label)[2] - self.canvas.bbox(label)[0]
+                    rect_x1, rect_y1, rect_x2, rect_y2 = label_x - text_width / 2 - 5, label_y - 10, label_x + text_width / 2 + 5, label_y + 10
+                    rectangle = self.canvas.create_rectangle(rect_x1, rect_y1, rect_x2, rect_y2, fill="lightblue", outline="lightblue")
+                    self.canvas.tag_lower(rectangle, label)
+                else:
+                    weight = 1
                 start_vertex_index = self.vertices.index(self.start_vertex)
                 end_vertex_index = self.vertices.index(end_vertex)
-                self.adjacency_matrix[start_vertex_index][end_vertex_index] = 1
-                self.adjacency_matrix[end_vertex_index][start_vertex_index] = 1
+                self.adjacency_matrix[start_vertex_index][end_vertex_index] = weight
+                self.adjacency_matrix[end_vertex_index][start_vertex_index] = weight
 
             self.start_vertex = None
             if self.context_menu:
                 self.context_menu.destroy()
-
+    def ask_for_weight(self):
+        weight_str = simpledialog.askstring("Weight", "Введите вес ребра:")
+        try:
+            weight = int(weight_str)
+            return weight
+        except ValueError:
+            return None
     def finish_edge(self, event):
         if self.context_menu:
             self.context_menu.destroy()
@@ -257,16 +279,13 @@ class GraphDrawerApp:
                 end_y = end_y - vertex_radius * math.sin(angle)
 
                 if start_vertex == end_vertex:
-                    loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25,
-                                                     start=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
+                    loop_id = self.canvas.create_arc(x - 18, y - 18, x + 25, y + 25, tart=20, extent=240, style=tk.ARC, outline="lightblue", width=3)
                     self.edges.append(loop_id)
                 else:
                     if (self.adjacency_matrix[i][j] == self.adjacency_matrix[j][i]):
-                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y,
-                                                          fill="lightblue", width=3)
+                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, fill="lightblue", width=3)
                     else:
-                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST,
-                                                          fill="lightblue", width=3)
+                        line_id = self.canvas.create_line(start_x, start_y, end_x, end_y, arrow=tk.LAST, fill="lightblue", width=3)
 
                     self.edges.append(line_id)
 
@@ -292,11 +311,16 @@ class GraphDrawerApp:
     def display_adjacency_matrix(self):
         self.text_output.delete("1.0", tk.END)
 
-        if self.adjacency_matrix:
-            for row in self.adjacency_matrix:
-                self.text_output.insert(tk.END, " ".join(map(str, row)) + "\n")
-        else:
+        if not self.adjacency_matrix:
             self.text_output.insert(tk.END, "Пустой граф")
+            return
+
+        max_width = max(len(str(entry)) for row in self.adjacency_matrix for entry in row)
+        for i, row in enumerate(self.adjacency_matrix):
+            formatted_row = [f"{entry:>{max_width}}" for entry in row]
+            self.text_output.insert(tk.END, " ".join(formatted_row) + "\n")
+            self.text_output.tag_configure(f"row_{i}", justify="left")
+            self.text_output.tag_add(f"row_{i}", f"{i + 1}.0", f"{i + 1}.end")
 
     def display_adjacency_matrix_label(self):
         for widget in self.root.winfo_children():
@@ -363,7 +387,6 @@ class GraphDrawerApp:
 
     def display_incidence_matrix(self):
         self.text_output.delete("1.0", tk.END)
-
         incidence_matrix, edge_vertices = self.get_incidence_matrix()
         if incidence_matrix:
             max_width = max(len(str(entry)) for row in incidence_matrix for entry in row)
@@ -378,7 +401,6 @@ class GraphDrawerApp:
     def get_incidence_matrix(self):
         if not self.adjacency_matrix:
             return None, None
-
         num_vertices = len(self.adjacency_matrix)
         num_edges = sum(sum(row) for row in self.adjacency_matrix)
 
@@ -388,17 +410,18 @@ class GraphDrawerApp:
         edge_index = 0
         for i in range(num_vertices):
             for j in range(num_vertices):
-                if self.adjacency_matrix[i][j] == 1:
-                    reverse_edge_exists = self.adjacency_matrix[j][i] == 1
+                weight = self.adjacency_matrix[i][j]
+                if weight != 0:
+                    reverse_edge_exists = self.adjacency_matrix[j][i] != 0
                     if reverse_edge_exists:
                         if (j + 1, i + 1) not in edge_vertices:
-                            incidence_matrix[i][edge_index] = 1
-                            incidence_matrix[j][edge_index] = 1
+                            incidence_matrix[i][edge_index] = weight
+                            incidence_matrix[j][edge_index] = weight
                             edge_vertices.add((i + 1, j + 1))
                             edge_index += 1
                     else:
-                        incidence_matrix[j][edge_index] = -1
-                        incidence_matrix[i][edge_index] = 1
+                        incidence_matrix[j][edge_index] = -weight
+                        incidence_matrix[i][edge_index] = weight
                         edge_vertices.add((i + 1, j + 1))
                         edge_index += 1
 
@@ -421,21 +444,16 @@ class GraphDrawerApp:
         return incidence_matrix, list(edge_vertices)
 
     def create_vertex_xy(self, x, y):
-        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue",
-                                            width=3)
+        vertex_id = self.canvas.create_oval(x - 18, y - 18, x + 18, y + 18, fill="lightblue", outline="lightblue", width=3)
         self.vertices.append(vertex_id)
-
         vertex_index = len(self.vertices)
-
         label_id = self.canvas.create_text(x, y, text=str(vertex_index), fill="black", font=("Arial", 12))
-
         if not self.adjacency_matrix:
             self.adjacency_matrix = [[0]]
         else:
             for row in self.adjacency_matrix:
                 row.append(0)
             self.adjacency_matrix.append([0] * len(self.adjacency_matrix[0]))
-
         if self.start_vertex is not None:
             end_vertex = vertex_id
             self.finish_edge_context(end_vertex)
@@ -444,8 +462,7 @@ class GraphDrawerApp:
         center_x, center_y = self.canvas.winfo_width() / 2, self.canvas.winfo_height() / 2
         radius = center_x / 2
         for i in range(vertices_count):
-            self.create_vertex_xy(center_x + radius * math.cos(2 * math.pi / vertices_count * i),
-                                  center_y + radius * math.sin(2 * math.pi / vertices_count * i))
+            self.create_vertex_xy(center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i))
 
     def parse_adjacency_matrix(self):
         self.canvas.delete("all")
@@ -474,21 +491,22 @@ class GraphDrawerApp:
 
         for i in range(len(matrix)):
             for j in range(len(matrix[i])):
-                if matrix[i][j] == 1:
-                    self.adjacency_matrix[i][j] = 1
+                weight = matrix[i][j]
+                if weight > 0:
+                    self.adjacency_matrix[i][j] = weight
                     self.start_vertex = self.vertices[i]
                     end_vertex = self.vertices[j]
 
-                    reverse_edge_exists = matrix[j][i] == 1
+                    reverse_edge_exists = matrix[j][i] > 0
 
                     if reverse_edge_exists:
                         self.edge_mode = "edge"
                         self.start_vertex = self.vertices[i]
-                        self.finish_edge_context(end_vertex)
+                        self.finish_edge_context(end_vertex, weight)
                     else:
                         self.edge_mode = "arc"
                         self.start_vertex = self.vertices[i]
-                        self.finish_edge_context(end_vertex)
+                        self.finish_edge_context(end_vertex, weight)
 
     def parse_incidence_matrix(self):
         self.canvas.delete("all")

@@ -9,22 +9,64 @@ class InputDialog(QDialog):
         super().__init__(parent)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
-        layout = QFormLayout(self)
-
-        self.input = QLineEdit(self)
-        self.input.setStyleSheet("border: 2px solid #a0bbff; border-radius: 5px;")
-        layout.addRow("Ведите вес", self.input)
-
-        self.comboBox = QComboBox()
-        self.comboBox.addItem("Дуга")
-        self.comboBox.addItem("Ребро")
-        layout.addWidget(self.comboBox)
-
-        layout.addWidget(buttonBox)
-
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
+        self.setStyleSheet("QDialog {background-color: #e8f3fc;}")
+        self.setWindowTitle(" ")
 
+        buttonBox.button(QDialogButtonBox.Ok).setText("Принять")
+        buttonBox.button(QDialogButtonBox.Cancel).setText("Отмена")
+        button_style = (
+            "QPushButton { "
+            "background-color: #a0bbff; "
+            "color: #ffffff; "
+            "border-radius: 5px;"
+            "font-family: Rubik; "
+            "font-size: 11pt; "
+            "font-weight: bold;"
+            "} " 
+            "QPushButton:pressed { background-color: #87aaff; }"
+        )
+        buttonBox.setStyleSheet(button_style)
+        ok_button = buttonBox.button(QDialogButtonBox.Ok)
+        cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
+        ok_button.setStyleSheet(button_style)
+        cancel_button.setStyleSheet(button_style)
+        layout = QFormLayout(self)
+
+        label = QLabel("Введите вес:", self)
+        label.setStyleSheet("font-family: Rubik; font-size: 11pt; color: #1e3b70;")
+        self.input = QLineEdit(self)
+        self.input.setStyleSheet(
+            "border: 4px #a0bbff;"
+            "border-radius: 8px;"
+            "padding: 2px;"
+            "font-family: 'Rubik';"
+            "font-size: 11pt;"
+            "font-weight: bold;"
+            "text-align: center;"
+            "background-color: #a0bbff;"
+            "color: #ffffff;")
+
+        layout.addRow(label, self.input)
+
+        self.comboBox = QComboBox(self)
+        self.comboBox.addItem("Дуга")
+        self.comboBox.addItem("Ребро")
+        self.comboBox.setStyleSheet("border: 4px #a0bbff;"
+            "border-radius: 8px;"
+            "padding: 2px; "
+            "font-family: 'Rubik';"
+            "font-size: 11pt;"
+            "font-weight: bold;"
+            "text-align: center;"
+            "background-color: #a0bbff;"
+            "color: #ffffff;")
+        layout.addWidget(self.comboBox)
+        buttonBox.button(QDialogButtonBox.Ok).setFixedSize(100, 24)
+        buttonBox.button(QDialogButtonBox.Cancel).setFixedSize(100, 24)
+        buttonBox.move(150, 200)
+        layout.addWidget(buttonBox)
     def getInputs(self):
         return [self.input.text(), self.comboBox.currentIndex()]
 
@@ -33,33 +75,29 @@ class Ui_MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi()
-
         self.vertices = []
         self.edges = []
         self.edge_mode = "edge"
         self.matrix_weight_mode = "no_weight"
         self.parse_matrix_mode = "adj"
         self.add_mode = "edge"
-
         self.vertex_radius = 18
         self.start_vertex = -1
         self.dragged_vertex_index = -1
         self.cursor_pos = [0, 0]
         self.delete = False
-
         self.setupUi()
         self.setupButtons()
         self.show()
-
         self.toggle_add_mode()
 
     def setupUi(self):
         self.dialog = InputDialog(self)
-
         self.setObjectName("MainWindow")
         self.resize(1250, 900)
         self.setWindowTitle("Graph Drawer")
         self.centralwidget = QWidget(self)
+        self.setStyleSheet("QMainWindow {background-color: #e8f3fc;}")
 
         self.DisplayAdjMatrixButton = QPushButton(self.centralwidget, text="Матрица\nсмежности")
         self.DisplayAdjMatrixButton.setGeometry(QRect(160, 810, 180, 64))
@@ -87,40 +125,27 @@ class Ui_MainWindow(QMainWindow):
         self.TextOutput.setGeometry(QRect(800, 45, 420, 300))
         font = QFont("Rubik", 14)
         self.TextOutput.setFont(font)
-        self.TextOutput.setStyleSheet("border: 4px solid #a0bbff; border-radius: 10px; padding: 10px; background-color: #ffffff;")
+        self.TextOutput.setStyleSheet("border: 4px solid #a0bbff; "
+                                      "border-radius: 10px; "
+                                      "padding: 10px; "
+                                      "background-color: #ffffff;")
 
         self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
-        self.InputMatrixSelectorCombo.addItems(["Матрица\nсмежности", "Матрица\nинцидентности"])
+        self.InputMatrixSelectorCombo.addItems(["    Матрица\n    смежности", "    Матрица\n    инцидентности"])
         self.InputMatrixSelectorCombo.setGeometry(QRect(810, 380, 200, 45))
-        self.InputMatrixSelectorCombo.setStyleSheet("""
-                                                    QComboBox { 
-                                                        background-color: #a0bbff; 
-                                                        color: #ffffff; 
-                                                        border-radius: 8px; 
-                                                        font-family: 'Rubik'; 
-                                                        font-size: 14pt;  
-                                                        font-weight: bold; 
-                                                        text-align: center;
-                                                    } 
-                                                    QComboBox:down-arrow { 
-                                                        image: url(down_arrow.png); 
-                                                    }""")
-
+        self.InputMatrixSelectorCombo.setStyleSheet(
+            "border: 4px #a0bbff;"
+            "border-radius: 8px;"
+            "padding: 2px; font-family: 'Rubik';"
+            "font-size: 14pt;"
+            "font-weight: bold;"
+            "text-align: center;"
+            "background-color: #a0bbff;"
+            "color: #ffffff;")
         self.BuildGraphButton = QPushButton(self.centralwidget, text="Построить граф")
         self.BuildGraphButton.setGeometry(QRect(1030, 380, 180, 45))
         self.set_button_style(self.BuildGraphButton, "#a0bbff", "#87aaff")
-
         self.setCentralWidget(self.centralwidget)
-
-        # self.menubar = QMenuBar(self)
-        # self.menubar.setGeometry(QRect(0, 0, 1200, 21))
-        # self.menubar.setObjectName("menubar")
-        # self.setMenuBar(self.menubar)
-        # self.statusbar = QStatusBar(self)
-        # self.statusbar.setObjectName("statusbar")
-        # self.setStatusBar(self.statusbar)
-        # self.retranslateUi()
-
         QMetaObject.connectSlotsByName(self)
 
     def set_button_style(self, button, default_color, pressed_color):
@@ -152,14 +177,6 @@ class Ui_MainWindow(QMainWindow):
         self.InputMatrixSelectorCombo.currentIndexChanged.connect(self.index_changed)
         self.BuildGraphButton.clicked.connect(self.build_graph)
 
-    # def closeEvent(self, event):
-    #     reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-    #     if reply == QMessageBox.Yes:
-    #         event.accept()
-    #     else:
-    #         event.ignore()
-
     def warningPopup(self, title, _text):
         QMessageBox.question(self, title, _text, QMessageBox.Ok, QMessageBox.Ok)
 
@@ -168,7 +185,11 @@ class Ui_MainWindow(QMainWindow):
 
     def toggle_add_mode(self):
         self.delete = False
-        button_style = "QPushButton { color: #ffffff; border-radius: 12px; font-family: 'Rubik'; font-size: 14pt; font-weight: bold; }"
+        button_style = "QPushButton { color: #ffffff; " \
+                       "border-radius: 12px; " \
+                       "font-family: 'Rubik'; " \
+                       "font-size: 14pt; " \
+                       "font-weight: bold; }"
 
         if self.add_mode == "vertex":
             self.EdgeModeButton.setStyleSheet(button_style + "QPushButton { background-color: #6ba894; } QPushButton:pressed { background-color: #6ba894; }")
@@ -236,36 +257,21 @@ class Ui_MainWindow(QMainWindow):
         self.start_vertex = -1
         self.update()
 
-    # def DrawFrame(self):
-    #     painter = QPainter(self)
-    #     pen = QPen(QColor(120, 120, 120), 1, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
-    #     painter.setPen(pen)
-
-    #     painter.drawLine(15, 15, 700, 15)
-    #     painter.drawLine(700, 15, 700, 700)
-    #     painter.drawLine(700, 700, 15, 700)
-    #     painter.drawLine(15, 700, 15, 15)
-    #     painter.end()
-
     def DrawVertices(self):
         for i, vertex in enumerate(self.vertices):
             self.DrawVertex(self, vertex[0], vertex[1], str(i + 1))
 
     def DrawVertex(self, image, x, y, index):
         painter = QPainter(image)
-
         pen_and_brush = painter.pen()
         pen_and_brush.setColor(QColor("#81a4ff"))
         pen_and_brush.setWidth(2)
         painter.setPen(pen_and_brush)
         painter.setBrush(QColor("#81a4ff"))
-
         painter.drawEllipse(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2))
-
         text_pen = painter.pen()
         text_pen.setColor(QColor(Qt.white))
         painter.setPen(text_pen)
-
         font = QFont("Rubik", 14)
         painter.setFont(font)
         painter.drawText(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2), Qt.AlignCenter, str(index))
@@ -320,7 +326,6 @@ class Ui_MainWindow(QMainWindow):
                 brush.setStyle(Qt.SolidPattern)
                 painter.setBrush(brush)
                 painter.drawRect(int(x2 - (x2 - x1) / 4 - 15), int(y2 - (y2 - y1) / 4 - 9), 30, 18)
-
                 font = QFont("Rubik", 12)
                 painter.setFont(font)
                 painter.drawText(QRectF(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18), Qt.AlignCenter, str(weight))
@@ -338,7 +343,7 @@ class Ui_MainWindow(QMainWindow):
         painter = QPainter(self)
         pen = QPen(QColor("#a0bbff"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         painter.setPen(pen)
-        #painter.fillRect(16, 85, 748, 698, QColor("#ffffff"))
+        painter.setBrush(QColor("#ffffff"))
         painter.drawRoundedRect(15, 85, 750, 700, 10, 10)
 
         painter.end()
@@ -368,14 +373,6 @@ class Ui_MainWindow(QMainWindow):
     def end_edge(self, start_vertex, end_vertex):
         weight, type = self.ask_for_weight()
         if weight != None:
-            # for i, edge in enumerate(self.edges):
-            #     if (edge[0] == start_vertex and edge[1] == end_vertex) or (
-            #             edge[1] == start_vertex and edge[0] == end_vertex and edge[3] == 1):
-            #         reply = QMessageBox.question(self, 'Вопрос', "Вы уверены что хотите перезаписать связь?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            #         if reply == QMessageBox.Yes:
-            #             self.edges[i] = [start_vertex, end_vertex, weight, type]
-            #             return
-
             self.edges.append([start_vertex, end_vertex, weight, type])
 
     def clear_graph(self):
@@ -505,16 +502,6 @@ class Ui_MainWindow(QMainWindow):
                         ended = True
             if (not ended):
                 self.edges.append([start_vertex, start_vertex, start_weight, 0])
-
-    '''def retranslateUi(self):
-        _translate = QCoreApplication.translate
-        self.setWindowTitle(_translate("MainWindow", "Graph Drawer"))
-        self.DisplayAdjMatrixButton.setText(_translate("MainWindow", "Матрица смежности"))
-        self.DisplayIncMatrixButton.setText(_translate("MainWindow", "Матрица инцидентности"))
-        self.ChangeModeButton.setText(_translate("MainWindow", "Конструктор вершин"))
-        self.EdgeModeButton.setText(_translate("MainWindow", "Рисование ребер"))
-        self.ClearButton.setText(_translate("MainWindow", "Очистить поле"))
-        self.BuildGraphButton.setText(_translate("MainWindow", "Простроить граф"))'''
 
 
 if __name__ == '__main__':

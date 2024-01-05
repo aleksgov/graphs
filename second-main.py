@@ -89,7 +89,7 @@ class Ui_MainWindow(QMainWindow):
         self.setupUi()
         self.setupButtons()
         self.show()
-        self.toggle_add_mode()
+        self.toggle_add_vertex()
 
     def setupUi(self):
         self.dialog = InputDialog(self)
@@ -168,8 +168,8 @@ class Ui_MainWindow(QMainWindow):
         self.DisplayAdjMatrixButton.clicked.connect(self.display_adjacency_matrix)
         self.DisplayIncMatrixButton.clicked.connect(self.display_incidence_matrix)
 
-        self.EdgeModeButton.clicked.connect(self.toggle_add_mode)
-        self.VertexModeButton.clicked.connect(self.toggle_add_mode)
+        self.EdgeModeButton.clicked.connect(self.toggle_add_edge)
+        self.VertexModeButton.clicked.connect(self.toggle_add_vertex)
         self.DeleteButton.clicked.connect(self.toggle_delete_mode)
 
         self.ClearButton.clicked.connect(self.clear_graph)
@@ -182,23 +182,23 @@ class Ui_MainWindow(QMainWindow):
 
     def toggle_delete_mode(self):
         self.delete = True
+        self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff7474")
+        self.set_button_style(self.VertexModeButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.EdgeModeButton, "#a0bbff", "#87aaff")
 
-    def toggle_add_mode(self):
+    def toggle_add_vertex(self):
         self.delete = False
-        button_style = "QPushButton { color: #ffffff; " \
-                       "border-radius: 12px; " \
-                       "font-family: 'Rubik'; " \
-                       "font-size: 14pt; " \
-                       "font-weight: bold; }"
+        self.set_button_style(self.EdgeModeButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.DeleteButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.VertexModeButton, "#8ed6da", "#6ba894")
+        self.add_mode = "vertex"
 
-        if self.add_mode == "vertex":
-            self.EdgeModeButton.setStyleSheet(button_style + "QPushButton { background-color: #6ba894; } QPushButton:pressed { background-color: #6ba894; }")
-            self.VertexModeButton.setStyleSheet(button_style + "QPushButton { background-color: #b8a1ff; } QPushButton:pressed { background-color: #9b84cf; }")
-            self.add_mode = "edge"
-        elif self.add_mode == "edge":
-            self.EdgeModeButton.setStyleSheet(button_style + "QPushButton { background-color: #8ed6da; } QPushButton:pressed { background-color: #6ba894; }")
-            self.VertexModeButton.setStyleSheet(button_style + "QPushButton { background-color: #9b84cf; } QPushButton:pressed { background-color: #9b84cf; }")
-            self.add_mode = "vertex"
+    def toggle_add_edge(self):
+        self.delete = False
+        self.set_button_style(self.VertexModeButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.DeleteButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.EdgeModeButton, "#8ed6da", "#6ba894")
+        self.add_mode = "edge"
 
     def mousePressEvent(self, event):
         if (15 + self.vertex_radius < event.x() < 765 - self.vertex_radius and 85 + self.vertex_radius < event.y() < 785 - self.vertex_radius):

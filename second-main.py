@@ -45,6 +45,7 @@ class Ui_MainWindow(QMainWindow):
         self.start_vertex = -1
         self.dragged_vertex_index = -1
         self.cursor_pos = [0, 0]
+        self.delete = False
 
         self.setupUi()
         self.setupButtons()
@@ -91,8 +92,19 @@ class Ui_MainWindow(QMainWindow):
         self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
         self.InputMatrixSelectorCombo.addItems(["Матрица\nсмежности", "Матрица\nинцидентности"])
         self.InputMatrixSelectorCombo.setGeometry(QRect(810, 380, 200, 45))
-        self.InputMatrixSelectorCombo.setStyleSheet(
-            "QComboBox { background-color: #a0bbff; color: #ffffff; border-radius: 8px; font-family: 'Rubik'; font-size: 14pt;  font-weight: bold; text-align: center;} QComboBox:down-arrow { image: url(down_arrow.png); }")
+        self.InputMatrixSelectorCombo.setStyleSheet("""
+                                                    QComboBox { 
+                                                        background-color: #a0bbff; 
+                                                        color: #ffffff; 
+                                                        border-radius: 8px; 
+                                                        font-family: 'Rubik'; 
+                                                        font-size: 14pt;  
+                                                        font-weight: bold; 
+                                                        text-align: center;
+                                                    } 
+                                                    QComboBox:down-arrow { 
+                                                        image: url(down_arrow.png); 
+                                                    }""")
 
         self.BuildGraphButton = QPushButton(self.centralwidget, text="Построить граф")
         self.BuildGraphButton.setGeometry(QRect(1030, 380, 180, 45))
@@ -133,6 +145,7 @@ class Ui_MainWindow(QMainWindow):
 
         self.EdgeModeButton.clicked.connect(self.toggle_add_mode)
         self.VertexModeButton.clicked.connect(self.toggle_add_mode)
+        self.DeleteButton.clicked.connect(self.toggle_delete_mode)
 
         self.ClearButton.clicked.connect(self.clear_graph)
 
@@ -150,7 +163,11 @@ class Ui_MainWindow(QMainWindow):
     def warningPopup(self, title, _text):
         QMessageBox.question(self, title, _text, QMessageBox.Ok, QMessageBox.Ok)
 
+    def toggle_delete_mode(self):
+        self.delete = True
+
     def toggle_add_mode(self):
+        self.delete = False
         button_style = "QPushButton { color: #ffffff; border-radius: 12px; font-family: 'Rubik'; font-size: 14pt; font-weight: bold; }"
 
         if self.add_mode == "vertex":
@@ -163,12 +180,26 @@ class Ui_MainWindow(QMainWindow):
             self.add_mode = "vertex"
 
     def mousePressEvent(self, event):
-        if (30 < event.x() < 750 and 100 < event.y() < 770):
-            if (self.add_mode == "vertex"):
+        if (15 + self.vertex_radius < event.x() < 765 - self.vertex_radius and 85 + self.vertex_radius < event.y() < 785 - self.vertex_radius):
+            if (self.delete):
+                for i, vertex in enumerate(self.vertices):
+                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
+                        self.vertices.pop(i)
+                        j = 0
+                        while j < len(self.edges):
+                            if (self.edges[j][0] == i or self.edges[j][1] == i):
+                                self.edges.pop(j)
+                                continue
+                            if (self.edges[j][0] > i):
+                                self.edges[j][0] -= 1
+                            if (self.edges[j][1] > i):
+                                self.edges[j][1] -= 1
+                            j += 1
+                        break
+            elif (self.add_mode == "vertex"):
                 i = 0
                 while i < len(self.vertices):
-                    if (abs(self.vertices[i][0] - event.x()) < self.vertex_radius and abs(
-                            self.vertices[i][1] - event.y()) < self.vertex_radius):
+                    if (abs(self.vertices[i][0] - event.x()) < self.vertex_radius and abs(self.vertices[i][1] - event.y()) < self.vertex_radius):
                         self.dragged_vertex_index = i
                         break
                     i += 1
@@ -176,14 +207,13 @@ class Ui_MainWindow(QMainWindow):
                     # self.DrawVertex(self, event.x(), event.y(), str(len(self.vertices) + 1))
                     self.vertices.append([event.x(), event.y(), 1])
                     self.update()
-            if (self.add_mode == "edge"):
+            elif (self.add_mode == "edge"):
                 for i, vertex in enumerate(self.vertices):
-                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(
-                            vertex[1] - event.y()) < self.vertex_radius):
+                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
                         self.start_vertex = i
 
     def mouseMoveEvent(self, event):
-        if (15 < event.x() < 700 and 15 < event.y() < 700):
+        if (15 + self.vertex_radius < event.x() < 765 - self.vertex_radius and 85 + self.vertex_radius < event.y() < 785 - self.vertex_radius):
             if (self.dragged_vertex_index != -1):
                 self.vertices[self.dragged_vertex_index][0] = event.x()
                 self.vertices[self.dragged_vertex_index][1] = event.y()
@@ -199,24 +229,23 @@ class Ui_MainWindow(QMainWindow):
     def mouseReleaseEvent(self, event):
         if (self.start_vertex != -1):
             for i, vertex in enumerate(self.vertices):
-                if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(
-                        vertex[1] - event.y()) < self.vertex_radius):
+                if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
                     self.end_edge(self.start_vertex, i)
 
         self.dragged_vertex_index = -1
         self.start_vertex = -1
         self.update()
 
-    def DrawFrame(self):
-        painter = QPainter(self)
-        pen = QPen(QColor(120, 120, 120), 1, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
-        painter.setPen(pen)
+    # def DrawFrame(self):
+    #     painter = QPainter(self)
+    #     pen = QPen(QColor(120, 120, 120), 1, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+    #     painter.setPen(pen)
 
-        painter.drawLine(15, 15, 700, 15)
-        painter.drawLine(700, 15, 700, 700)
-        painter.drawLine(700, 700, 15, 700)
-        painter.drawLine(15, 700, 15, 15)
-        painter.end()
+    #     painter.drawLine(15, 15, 700, 15)
+    #     painter.drawLine(700, 15, 700, 700)
+    #     painter.drawLine(700, 700, 15, 700)
+    #     painter.drawLine(15, 700, 15, 15)
+    #     painter.end()
 
     def DrawVertices(self):
         for i, vertex in enumerate(self.vertices):
@@ -231,8 +260,7 @@ class Ui_MainWindow(QMainWindow):
         painter.setPen(pen_and_brush)
         painter.setBrush(QColor("#81a4ff"))
 
-        painter.drawEllipse(
-            QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2))
+        painter.drawEllipse(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2))
 
         text_pen = painter.pen()
         text_pen.setColor(QColor(Qt.white))
@@ -240,16 +268,13 @@ class Ui_MainWindow(QMainWindow):
 
         font = QFont("Rubik", 14)
         painter.setFont(font)
-        painter.drawText(
-            QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2),
-            Qt.AlignCenter, str(index))
+        painter.drawText(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2), Qt.AlignCenter, str(index))
 
         painter.end()
 
     def DrawEdges(self):
         for edge in self.edges:
-            self.DrawEdge(self, self.vertices[edge[0]][0], self.vertices[edge[0]][1], self.vertices[edge[1]][0],
-                          self.vertices[edge[1]][1], edge[2], edge[3])
+            self.DrawEdge(self, self.vertices[edge[0]][0], self.vertices[edge[0]][1], self.vertices[edge[1]][0], self.vertices[edge[1]][1], edge[2], edge[3])
 
     def DrawEdge(self, image, x1, y1, x2, y2, weight=-1, type=1):
         painter = QPainter(image)
@@ -257,8 +282,7 @@ class Ui_MainWindow(QMainWindow):
         painter.setPen(pen)
 
         if (x1 == x2 and y1 == y2):
-            painter.drawArc(QRect(x1 - self.vertex_radius * 2, y1 - self.vertex_radius * 2, self.vertex_radius * 2,
-                                  self.vertex_radius * 2), 0, 270 * 16)
+            painter.drawArc(QRect(x1 - self.vertex_radius * 2, y1 - self.vertex_radius * 2, self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
 
             if weight != -1:
                 brush = painter.brush()
@@ -269,8 +293,7 @@ class Ui_MainWindow(QMainWindow):
 
                 font = QFont("Rubik", 12)
                 painter.setFont(font)
-                painter.drawText(QRectF(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18),
-                                 Qt.AlignCenter, str(weight))
+                painter.drawText(QRectF(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18), Qt.AlignCenter, str(weight))
         else:
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
 
@@ -286,10 +309,8 @@ class Ui_MainWindow(QMainWindow):
                 painter.setBrush(brush)
                 points = [
                     QPointF(x2, y2),
-                    QPointF(x2 - arrow_len * math.cos(angle + arrow_open_angle),
-                            y2 - arrow_len * math.sin(angle + arrow_open_angle)),
-                    QPointF(x2 - arrow_len * math.cos(angle - arrow_open_angle),
-                            y2 - arrow_len * math.sin(angle - arrow_open_angle)),
+                    QPointF(x2 - arrow_len * math.cos(angle + arrow_open_angle), y2 - arrow_len * math.sin(angle + arrow_open_angle)),
+                    QPointF(x2 - arrow_len * math.cos(angle - arrow_open_angle), y2 - arrow_len * math.sin(angle - arrow_open_angle)),
                 ]
                 painter.drawConvexPolygon(points)
 
@@ -298,20 +319,18 @@ class Ui_MainWindow(QMainWindow):
                 brush.setColor(QColor(Qt.white))
                 brush.setStyle(Qt.SolidPattern)
                 painter.setBrush(brush)
-                painter.drawRect(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18)
+                painter.drawRect(int(x2 - (x2 - x1) / 4 - 15), int(y2 - (y2 - y1) / 4 - 9), 30, 18)
 
                 font = QFont("Rubik", 12)
                 painter.setFont(font)
-                painter.drawText(QRectF(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18), Qt.AlignCenter,
-                                 str(weight))
+                painter.drawText(QRectF(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18), Qt.AlignCenter, str(weight))
 
         painter.end()
 
     def paintEvent(self, event):
         self.DrawFrame()
         if (self.start_vertex != -1):
-            self.DrawEdge(self, self.vertices[self.start_vertex][0], self.vertices[self.start_vertex][1],
-                          self.cursor_pos[0], self.cursor_pos[1])
+            self.DrawEdge(self, self.vertices[self.start_vertex][0], self.vertices[self.start_vertex][1], self.cursor_pos[0], self.cursor_pos[1])
         self.DrawEdges()
         self.DrawVertices()
 
@@ -319,7 +338,7 @@ class Ui_MainWindow(QMainWindow):
         painter = QPainter(self)
         pen = QPen(QColor("#a0bbff"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         painter.setPen(pen)
-        painter.fillRect(16, 85, 748, 698, QColor("#ffffff"))
+        #painter.fillRect(16, 85, 748, 698, QColor("#ffffff"))
         painter.drawRoundedRect(15, 85, 750, 700, 10, 10)
 
         painter.end()
@@ -349,14 +368,13 @@ class Ui_MainWindow(QMainWindow):
     def end_edge(self, start_vertex, end_vertex):
         weight, type = self.ask_for_weight()
         if weight != None:
-            for i, edge in enumerate(self.edges):
-                if (edge[0] == start_vertex and edge[1] == end_vertex) or (
-                        edge[1] == start_vertex and edge[0] == end_vertex and edge[3] == 1):
-                    reply = QMessageBox.question(self, 'Вопрос', "Вы уверены что хотите перезаписать связь?",
-                                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                    if reply == QMessageBox.Yes:
-                        self.edges[i] = [start_vertex, end_vertex, weight, type]
-                        return
+            # for i, edge in enumerate(self.edges):
+            #     if (edge[0] == start_vertex and edge[1] == end_vertex) or (
+            #             edge[1] == start_vertex and edge[0] == end_vertex and edge[3] == 1):
+            #         reply = QMessageBox.question(self, 'Вопрос', "Вы уверены что хотите перезаписать связь?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            #         if reply == QMessageBox.Yes:
+            #             self.edges[i] = [start_vertex, end_vertex, weight, type]
+            #             return
 
             self.edges.append([start_vertex, end_vertex, weight, type])
 
@@ -411,8 +429,7 @@ class Ui_MainWindow(QMainWindow):
         center_x, center_y = 700 / 2 + 15, 700 / 2 + 15
         radius = center_x / 2
         for i in range(vertices_count):
-            self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i),
-                                  center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
+            self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
 
     def parse_adjacency_matrix(self):
         lines = self.TextOutput.toPlainText().strip().split("\n")

@@ -290,7 +290,7 @@ class Ui_MainWindow(QMainWindow):
         if (x1 == x2 and y1 == y2):
             painter.drawArc(QRect(x1 - self.vertex_radius * 2, y1 - self.vertex_radius * 2, self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
 
-            if weight != -1:
+            if weight != -1 and weight != "1":
                 brush = painter.brush()
                 brush.setColor(QColor(Qt.white))
                 brush.setStyle(Qt.SolidPattern)
@@ -320,7 +320,7 @@ class Ui_MainWindow(QMainWindow):
                 ]
                 painter.drawConvexPolygon(points)
 
-            if weight != -1:
+            if weight != -1 and weight != "1":
                 brush = painter.brush()
                 brush.setColor(QColor(Qt.white))
                 brush.setStyle(Qt.SolidPattern)
@@ -363,16 +363,20 @@ class Ui_MainWindow(QMainWindow):
     def ask_for_weight(self):
         if self.dialog.exec():
             weight, type = self.dialog.getInputs()
+            if weight.strip() == "":
+                return ["1", type]
             try:
                 weight = int(weight)
                 return [weight, type]
             except ValueError:
                 return [None, -1]
-        return [None, -1]
+            return [None, -1]
 
     def end_edge(self, start_vertex, end_vertex):
         weight, type = self.ask_for_weight()
-        if weight != None:
+        if weight is not None:
+            self.edges.append([start_vertex, end_vertex, weight, type])
+        if weight is None and type != -1:
             self.edges.append([start_vertex, end_vertex, weight, type])
 
     def clear_graph(self):
@@ -380,7 +384,6 @@ class Ui_MainWindow(QMainWindow):
         self.edges = []
         self.start_vertex = -1
         self.dragged_vertex_index = -1
-        self.TextOutput.setText("")
         self.update()
 
     def display_adjacency_matrix(self):
@@ -407,13 +410,14 @@ class Ui_MainWindow(QMainWindow):
             return
 
         incidence_matrix = [[0 for i in range(len(self.edges))] for j in range(len(self.vertices))]
+
         for i, edge in enumerate(self.edges):
             if edge[3] == 0:
-                incidence_matrix[edge[1]][i] = -edge[2]
-                incidence_matrix[edge[0]][i] = edge[2]
+                incidence_matrix[edge[1]][i] = -int(edge[2]) if isinstance(edge[2], str) else -edge[2]
+                incidence_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
             if edge[3] == 1:
-                incidence_matrix[edge[1]][i] = edge[2]
-                incidence_matrix[edge[0]][i] = edge[2]
+                incidence_matrix[edge[1]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
+                incidence_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
 
         max_width = max(len(str(entry)) for row in incidence_matrix for entry in row)
         output_text = ""

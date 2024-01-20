@@ -129,10 +129,40 @@ class Ui_MainWindow(QMainWindow):
                                       "border-radius: 10px; "
                                       "padding: 10px; "
                                       "background-color: #ffffff;")
+        self.TextOutput.setWordWrapMode(QTextOption.NoWrap)
+
+        self.tableWidget = QTableWidget(self.centralwidget)
+        self.tableWidget.setGeometry(QRect(800, 450, 420, 220))
+        self.tableWidget.setColumnCount(0)
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.setColumnWidth(2, 240)
+        table_style = (
+            "QTableWidget {"
+            "border: 4px solid #a0bbff;"
+            "gridline-color: #a0bbff;"
+            "border-radius: 10px;"
+            "}"
+        )
+        self.tableWidget.setStyleSheet(table_style)
+
+        self.trash_button = QPushButton(self.centralwidget, text="🗑")
+        self.trash_button.setGeometry(QRect(1180, 380, 45, 45))
+        button_style = (
+            "QPushButton { "
+                "border-radius: 10px;"
+                "padding: 10px;"
+                "font-family: 'Rubik';"
+                "font-size: 15pt;"
+                "background-color: #ffffff;"
+                "} "
+            "QPushButton:pressed { background-color: #ff7474 }"
+        )
+        self.trash_button.setStyleSheet(button_style)
+
 
         self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
-        self.InputMatrixSelectorCombo.addItems(["    Матрица\n    смежности", "    Матрица\n    инцидентности"])
-        self.InputMatrixSelectorCombo.setGeometry(QRect(810, 380, 200, 45))
+        self.InputMatrixSelectorCombo.addItems(["   Матрица\n   смежности", "   Матрица\n   инцидентности"])
+        self.InputMatrixSelectorCombo.setGeometry(QRect(790, 380, 190, 45))
         self.InputMatrixSelectorCombo.setStyleSheet(
             "border: 4px #a0bbff;"
             "border-radius: 8px;"
@@ -143,7 +173,7 @@ class Ui_MainWindow(QMainWindow):
             "background-color: #a0bbff;"
             "color: #ffffff;")
         self.BuildGraphButton = QPushButton(self.centralwidget, text="Построить граф")
-        self.BuildGraphButton.setGeometry(QRect(1030, 380, 180, 45))
+        self.BuildGraphButton.setGeometry(QRect(1000, 380, 165, 45))
         self.set_button_style(self.BuildGraphButton, "#a0bbff", "#87aaff")
         self.setCentralWidget(self.centralwidget)
         QMetaObject.connectSlotsByName(self)
@@ -176,10 +206,16 @@ class Ui_MainWindow(QMainWindow):
 
         self.InputMatrixSelectorCombo.currentIndexChanged.connect(self.index_changed)
         self.BuildGraphButton.clicked.connect(self.build_graph)
+        self.trash_button.clicked.connect(self.trash_matrix)
 
     def warningPopup(self, title, _text):
         QMessageBox.question(self, title, _text, QMessageBox.Ok, QMessageBox.Ok)
 
+    def trash_matrix(self):
+        self.TextOutput.clear()
+        self.tableWidget.clear()
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.setColumnCount(0)
     def toggle_delete_mode(self):
         self.delete = True
         self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff7474")
@@ -403,7 +439,16 @@ class Ui_MainWindow(QMainWindow):
             formatted_row = [f"{entry:>{max_width}}  " for entry in row]
             output_text += " ".join(formatted_row) + "\n"
         self.TextOutput.setText(output_text)
+        self.tableWidget.clear()
+        self.tableWidget.setRowCount(len(adj_matrix))
+        self.tableWidget.setColumnCount(len(adj_matrix[0]))
+        font = QFont("Rubik\n", 12)
 
+        for i in range(len(adj_matrix)):
+            for j in range(len(adj_matrix[i])):
+                item = QTableWidgetItem(str(adj_matrix[i][j]))
+                item.setFont(font)
+                self.tableWidget.setItem(i, j, item)
     def display_incidence_matrix(self):
         if len(self.vertices) == 0 or len(self.edges) == 0:
             self.TextOutput.setText("Пустой граф")
@@ -432,23 +477,24 @@ class Ui_MainWindow(QMainWindow):
         for i in range(vertices_count):
             self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
 
+
     def parse_adjacency_matrix(self):
         lines = self.TextOutput.toPlainText().strip().split("\n")
 
         self.clear_graph()
 
         if len(lines[0]) == 0:
-            self.warningPopup("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup("Ошибка!", "Формат матрицы неверен.")
             return
 
         try:
             matrix = [list(map(int, line.split())) for line in lines]
         except ValueError:
-            self.warningPopup("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup("Ошибка!", "Формат матрицы неверен.")
             return
 
         if any(len(row) != len(matrix) for row in matrix):
-            self.warningPopup("Ошибка!", "Матрица должна быть квадратной")
+            self.warningPopup("Ошибка!", "Матрица должна быть квадратной.")
             return
 
         self.create_graph(len(matrix))

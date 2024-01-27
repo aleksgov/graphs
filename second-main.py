@@ -336,7 +336,7 @@ class Ui_MainWindow(QMainWindow):
 
     def DrawEdge(self, image, x1, y1, x2, y2, weight=-1, type=1):
         painter = QPainter(image)
-        pen = QPen(QColor(129, 164, 255), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        pen = QPen(QColor("#3A61C8"), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         painter.setPen(pen)
 
         if (x1 == x2 and y1 == y2):
@@ -362,7 +362,7 @@ class Ui_MainWindow(QMainWindow):
                 arrow_len = 15
                 arrow_open_angle = math.pi / 10
                 brush = painter.brush()
-                brush.setColor(QColor(129,164,255))
+                brush.setColor(QColor("#3A61C8"))
                 brush.setStyle(Qt.SolidPattern)
                 painter.setBrush(brush)
                 points = [

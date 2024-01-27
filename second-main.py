@@ -18,34 +18,39 @@ class InputDialog(QDialog):
         buttonBox.button(QDialogButtonBox.Cancel).setText("Отмена")
         button_style = (
             "QPushButton { "
-            "background-color: #a0bbff; "
+            "background-color: #90AFFF; "
             "color: #ffffff; "
             "border-radius: 5px;"
             "font-family: Rubik; "
             "font-size: 11pt; "
             "font-weight: bold;"
             "} " 
-            "QPushButton:pressed { background-color: #87aaff; }"
+            "QPushButton:hover { background-color: #7CA0FF; }"
         )
         buttonBox.setStyleSheet(button_style)
+        
         ok_button = buttonBox.button(QDialogButtonBox.Ok)
-        cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
+        ok_button.setCursor(Qt.PointingHandCursor)
         ok_button.setStyleSheet(button_style)
+        
+        cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
+        cancel_button.setCursor(Qt.PointingHandCursor)
         cancel_button.setStyleSheet(button_style)
+        
         layout = QFormLayout(self)
-
         label = QLabel("Введите вес:", self)
         label.setStyleSheet("font-family: Rubik; font-size: 11pt; color: #1e3b70;")
+        
         self.input = QLineEdit(self)
         self.input.setStyleSheet(
-            "border: 4px #a0bbff;"
+            "border: 4px #90AFFF;"
             "border-radius: 8px;"
             "padding: 2px;"
             "font-family: 'Rubik';"
             "font-size: 11pt;"
             "font-weight: bold;"
             "text-align: center;"
-            "background-color: #a0bbff;"
+            "background-color: #90AFFF;"
             "color: #ffffff;")
 
         layout.addRow(label, self.input)
@@ -53,20 +58,22 @@ class InputDialog(QDialog):
         self.comboBox = QComboBox(self)
         self.comboBox.addItem("Дуга")
         self.comboBox.addItem("Ребро")
-        self.comboBox.setStyleSheet("border: 4px #a0bbff;"
+        self.comboBox.setStyleSheet("border: 4px #90AFFF;"
             "border-radius: 8px;"
             "padding: 2px; "
             "font-family: 'Rubik';"
             "font-size: 11pt;"
             "font-weight: bold;"
             "text-align: center;"
-            "background-color: #a0bbff;"
+            "background-color: #90AFFF;"
             "color: #ffffff;")
         layout.addWidget(self.comboBox)
         buttonBox.button(QDialogButtonBox.Ok).setFixedSize(100, 24)
         buttonBox.button(QDialogButtonBox.Cancel).setFixedSize(100, 24)
         buttonBox.move(150, 200)
         layout.addWidget(buttonBox)
+        self.comboBox.setCursor(Qt.PointingHandCursor)
+        
     def getInputs(self):
         return [self.input.text(), self.comboBox.currentIndex()]
 
@@ -101,31 +108,36 @@ class Ui_MainWindow(QMainWindow):
 
         self.DisplayAdjMatrixButton = QPushButton(self.centralwidget, text="Матрица\nсмежности")
         self.DisplayAdjMatrixButton.setGeometry(QRect(160, 810, 180, 64))
-        self.set_button_style(self.DisplayAdjMatrixButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.DisplayAdjMatrixButton, "#90AFFF", "#7CA0FF")
+        self.DisplayAdjMatrixButton.setCursor(Qt.PointingHandCursor)
 
         self.DisplayIncMatrixButton = QPushButton(self.centralwidget, text="Матрица\nинцидентности")
         self.DisplayIncMatrixButton.setGeometry(QRect(400, 810, 180, 64))
-        self.set_button_style(self.DisplayIncMatrixButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.DisplayIncMatrixButton, "#90AFFF", "#7CA0FF")
+        self.DisplayIncMatrixButton.setCursor(Qt.PointingHandCursor)
 
         self.EdgeModeButton = QPushButton(self.centralwidget, text="Конструктор\nсвязей")
         self.EdgeModeButton.setGeometry(QRect(10, 12, 170, 55))
+        self.EdgeModeButton.setCursor(Qt.PointingHandCursor)
 
         self.VertexModeButton = QPushButton(self.centralwidget, text="Конструктор\nвершин")
         self.VertexModeButton.setGeometry(QRect(207, 12, 170, 55))
+        self.VertexModeButton.setCursor(Qt.PointingHandCursor)
 
         self.DeleteButton = QPushButton(self.centralwidget, text="Удалить\nвершину")
         self.DeleteButton.setGeometry(QRect(403, 12, 170, 55))
-        self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff7474")
+        self.DeleteButton.setCursor(Qt.PointingHandCursor)
 
         self.ClearButton = QPushButton(self.centralwidget, text="Очистить поле")
         self.ClearButton.setGeometry(QRect(600, 12, 170, 55))
-        self.set_button_style(self.ClearButton, "#ff7474", "#ff9d9d")
+        self.set_button_style(self.ClearButton, "#FF7474", "#FF5C5C")
+        self.ClearButton.setCursor(Qt.PointingHandCursor)
 
         self.TextOutput = QTextEdit(self.centralwidget)
         self.TextOutput.setGeometry(QRect(800, 45, 420, 300))
         font = QFont("Rubik", 14)
         self.TextOutput.setFont(font)
-        self.TextOutput.setStyleSheet("border: 4px solid #a0bbff; "
+        self.TextOutput.setStyleSheet("border: 4px solid #90AFFF; "
                                       "border-radius: 10px; "
                                       "padding: 10px; "
                                       "background-color: #ffffff;")
@@ -138,8 +150,8 @@ class Ui_MainWindow(QMainWindow):
         self.tableWidget.setColumnWidth(2, 240)
         table_style = (
             "QTableWidget {"
-            "border: 4px solid #a0bbff;"
-            "gridline-color: #a0bbff;"
+            "border: 4px solid #90AFFF;"
+            "gridline-color: #90AFFF;"
             "border-radius: 10px;"
             "}"
         )
@@ -155,26 +167,29 @@ class Ui_MainWindow(QMainWindow):
                 "font-size: 15pt;"
                 "background-color: #ffffff;"
                 "} "
-            "QPushButton:pressed { background-color: #ff7474 }"
+            "QPushButton:hover { background-color: #FF7474 }"
         )
         self.trash_button.setStyleSheet(button_style)
-
+        self.trash_button.setCursor(Qt.PointingHandCursor)
 
         self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
         self.InputMatrixSelectorCombo.addItems(["   Матрица\n   смежности", "   Матрица\n   инцидентности"])
         self.InputMatrixSelectorCombo.setGeometry(QRect(790, 380, 190, 45))
         self.InputMatrixSelectorCombo.setStyleSheet(
-            "border: 4px #a0bbff;"
+            "border: 4px #90AFFF;"
             "border-radius: 8px;"
             "padding: 2px; font-family: 'Rubik';"
             "font-size: 14pt;"
             "font-weight: bold;"
             "text-align: center;"
-            "background-color: #a0bbff;"
+            "background-color: #90AFFF;"
             "color: #ffffff;")
+        self.InputMatrixSelectorCombo.setCursor(Qt.PointingHandCursor)
+        
         self.BuildGraphButton = QPushButton(self.centralwidget, text="Построить граф")
         self.BuildGraphButton.setGeometry(QRect(1000, 380, 165, 45))
-        self.set_button_style(self.BuildGraphButton, "#a0bbff", "#87aaff")
+        self.BuildGraphButton.setCursor(Qt.PointingHandCursor)
+        self.set_button_style(self.BuildGraphButton, "#90AFFF", "#7CA0FF")
         self.setCentralWidget(self.centralwidget)
         QMetaObject.connectSlotsByName(self)
 
@@ -188,7 +203,7 @@ class Ui_MainWindow(QMainWindow):
                 font-size: 14pt;
                 font-weight: bold;
             }}
-            QPushButton:pressed {{
+            QPushButton:hover {{
                 background-color: {pressed_color};
             }}
         """
@@ -216,24 +231,25 @@ class Ui_MainWindow(QMainWindow):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
+        
     def toggle_delete_mode(self):
         self.delete = True
-        self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff7474")
-        self.set_button_style(self.VertexModeButton, "#a0bbff", "#87aaff")
-        self.set_button_style(self.EdgeModeButton, "#a0bbff", "#87aaff")
+        self.set_button_style(self.DeleteButton, "#FF8383", "#FF5C5C")
+        self.set_button_style(self.VertexModeButton, "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#7CA0FF")
 
     def toggle_add_vertex(self):
         self.delete = False
-        self.set_button_style(self.EdgeModeButton, "#a0bbff", "#87aaff")
-        self.set_button_style(self.DeleteButton, "#a0bbff", "#87aaff")
-        self.set_button_style(self.VertexModeButton, "#8ed6da", "#6ba894")
+        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#90AFFF", "#FF7474")
+        self.set_button_style(self.VertexModeButton, "#7DD6DB", "#4BCFD6")
         self.add_mode = "vertex"
 
     def toggle_add_edge(self):
         self.delete = False
-        self.set_button_style(self.VertexModeButton, "#a0bbff", "#87aaff")
-        self.set_button_style(self.DeleteButton, "#a0bbff", "#87aaff")
-        self.set_button_style(self.EdgeModeButton, "#8ed6da", "#6ba894")
+        self.set_button_style(self.VertexModeButton, "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#90AFFF", "#FF7474")
+        self.set_button_style(self.EdgeModeButton, "#7DD6DB", "#4BCFD6")
         self.add_mode = "edge"
 
     def mousePressEvent(self, event):
@@ -449,6 +465,7 @@ class Ui_MainWindow(QMainWindow):
                 item = QTableWidgetItem(str(adj_matrix[i][j]))
                 item.setFont(font)
                 self.tableWidget.setItem(i, j, item)
+                
     def display_incidence_matrix(self):
         if len(self.vertices) == 0 or len(self.edges) == 0:
             self.TextOutput.setText("Пустой граф")
@@ -476,7 +493,6 @@ class Ui_MainWindow(QMainWindow):
         radius = center_x / 2
         for i in range(vertices_count):
             self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
-
 
     def parse_adjacency_matrix(self):
         lines = self.TextOutput.toPlainText().strip().split("\n")

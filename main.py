@@ -2,7 +2,66 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import math
-import datetime
+
+class InstructionsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        layout = QVBoxLayout(self)
+        label_text = (
+            "<h1>Список возможностей приложения:</h1>"
+            "<h2>1. Добавление вершин:</h2>"
+            "<p>• Выберите режим 'Конструктор вершин', нажав ЛКМ на кнопку 'Конструктор вершин'.</p>"
+            "<p>• Щелкните ЛКМ/ПКМ по пустой области в пределах рамки для графа, чтобы добавить новую вершину.</p>"
+            "<p>• Если вершину необходимо переместить, переключитесь в режим 'Конструктор вершин' и перетащите вершину в новое место, зажав ЛКМ/ПКМ на нужную вершину.</p>"
+            "<h2>2. Добавление связей:</h2>"
+            "<p>• Выберите режим 'Конструктор связей', нажав ЛКМ на кнопку 'Конструктор связей'.</p>"
+            "<p>• Чтобы создать связь между двумя вершинами, зажмите ЛКМ/ПКМ на одной вершине и проведите связь до другой вершины.</p>"
+            "<p>• При создании связи вам будет предложено ввести вес ребра и тип («Дуга» или «Ребро»).</p>"
+            "<p>   Примечание: вес необходимо вводить обязательно.</p>"
+            "<h2>3. Удаление вершин:</h2>"
+            "<p>• Выберите режим 'Удалить вершину', нажав ЛКМ на кнопку 'Удалить вершину'.</p>"
+            "<p>• Щелкните ЛКМ/ПКМ по существующей вершине, чтобы удалить её из графа.</p>"
+            "<h2>4. Очистка поля:</h2>"
+            "<p>• Нажмите ЛКМ на кнопку 'Очистить поле', чтобы удалить все вершины и рёбра из графа.</p>"
+            "<h2>5. Вывод матриц:</h2>"
+            "<p>• Вы можете просмотреть матрицу смежности или матрицу инцидентности, нажав ЛКМ на соответствующую кнопку ('Матрица смежности' или 'Матрица инцидентности').</p>"
+            "<p>• Результат отображается в окне текстового вывода.</p>"
+            "<h2>6. Построение графа по матрице:</h2>"
+            "<p>• Выберите тип матрицы ('Матрица смежности' или 'Матрица инцидентности') с помощью выпадающего списка.</p>"
+            "<p>• Введите матрицу в окно текстового вывода.</p>"
+            "<p>• Нажмите ЛКМ на кнопку 'Построить граф' для создания графа на основе введенной матрицы.</p>"
+            "<h2>7. Особенности интерфейса:</h2>"
+            "<p>• Рамка для графа находится в пределах области размером 750x700. Вершины не могут быть созданы или перемещены за пределы этой области.</p>"
+            "<p>• Цвет вершин - синий, цвет рёбер - светло-синий.</p>"
+            "<p>• Рамка и кнопки имеют стилизованный дизайн для улучшения визуального восприятия.</p>"
+            "<h2>8. Выход из приложения:</h2>"
+            "<p>• Приложение может быть закрыто, нажав ЛКМ на крестик в верхнем правом углу окна.</p>"
+            "<p>При использовании приложения рекомендуется внимательно следить за сообщениями об ошибках и предупреждениями в случае неправильного ввода данных или выполнения операций.</p>"
+        )
+        label = QLabel(label_text, self)
+        label.setStyleSheet("font-family: Rubik; font-size: 12pt; color: #1e3b70;")
+        layout.addWidget(label)
+
+        ok_button = QPushButton("OK", self)
+        ok_button.clicked.connect(self.accept)
+        ok_button.setStyleSheet(
+            "QPushButton { "
+            "background-color: #90AFFF; "
+            "color: #ffffff; "
+            "border-radius: 5px;"
+            "font-family: Rubik; "
+            "font-size: 11pt; "
+            "font-weight: bold;"
+            "} "
+            "QPushButton:hover { background-color: #7CA0FF; }"
+        )
+        layout.addWidget(ok_button)
+
+        self.setWindowTitle("Instructions")
+
+        # Connect the finished signal to deleteLater
+        self.finished.connect(self.deleteLater)
 
 class InputDialog(QDialog):
     def __init__(self, parent=None):
@@ -28,19 +87,14 @@ class InputDialog(QDialog):
             "QPushButton:hover { background-color: #7CA0FF; }"
         )
         buttonBox.setStyleSheet(button_style)
-        
         ok_button = buttonBox.button(QDialogButtonBox.Ok)
-        ok_button.setCursor(Qt.PointingHandCursor)
-        ok_button.setStyleSheet(button_style)
-        
         cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
-        cancel_button.setCursor(Qt.PointingHandCursor)
+        ok_button.setStyleSheet(button_style)
         cancel_button.setStyleSheet(button_style)
-        
         layout = QFormLayout(self)
+
         label = QLabel("Введите вес:", self)
         label.setStyleSheet("font-family: Rubik; font-size: 11pt; color: #1e3b70;")
-        
         self.input = QLineEdit(self)
         self.input.setStyleSheet(
             "border: 4px #90AFFF;"
@@ -72,8 +126,6 @@ class InputDialog(QDialog):
         buttonBox.button(QDialogButtonBox.Cancel).setFixedSize(100, 24)
         buttonBox.move(150, 200)
         layout.addWidget(buttonBox)
-        self.comboBox.setCursor(Qt.PointingHandCursor)
-        
     def getInputs(self):
         return [self.input.text(), self.comboBox.currentIndex()]
 
@@ -108,30 +160,25 @@ class Ui_MainWindow(QMainWindow):
 
         self.DisplayAdjMatrixButton = QPushButton(self.centralwidget, text="Матрица\nсмежности")
         self.DisplayAdjMatrixButton.setGeometry(QRect(160, 810, 180, 64))
-        self.set_button_style(self.DisplayAdjMatrixButton, "#90AFFF", "#7CA0FF")
-        self.DisplayAdjMatrixButton.setCursor(Qt.PointingHandCursor)
+        self.set_button_style(self.DisplayAdjMatrixButton, "#90AFFF", "#7CA0FF", "#a0bbff")
 
         self.DisplayIncMatrixButton = QPushButton(self.centralwidget, text="Матрица\nинцидентности")
         self.DisplayIncMatrixButton.setGeometry(QRect(400, 810, 180, 64))
-        self.set_button_style(self.DisplayIncMatrixButton, "#90AFFF", "#7CA0FF")
-        self.DisplayIncMatrixButton.setCursor(Qt.PointingHandCursor)
+        self.set_button_style(self.DisplayIncMatrixButton, "#90AFFF", "#7CA0FF", "#a0bbff")
 
         self.EdgeModeButton = QPushButton(self.centralwidget, text="Конструктор\nсвязей")
         self.EdgeModeButton.setGeometry(QRect(10, 12, 170, 55))
-        self.EdgeModeButton.setCursor(Qt.PointingHandCursor)
 
         self.VertexModeButton = QPushButton(self.centralwidget, text="Конструктор\nвершин")
         self.VertexModeButton.setGeometry(QRect(207, 12, 170, 55))
-        self.VertexModeButton.setCursor(Qt.PointingHandCursor)
 
         self.DeleteButton = QPushButton(self.centralwidget, text="Удалить\nвершину")
         self.DeleteButton.setGeometry(QRect(403, 12, 170, 55))
-        self.DeleteButton.setCursor(Qt.PointingHandCursor)
+        self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff7474", "#ff7474")
 
         self.ClearButton = QPushButton(self.centralwidget, text="Очистить поле")
         self.ClearButton.setGeometry(QRect(600, 12, 170, 55))
-        self.set_button_style(self.ClearButton, "#FF7474", "#FF5C5C")
-        self.ClearButton.setCursor(Qt.PointingHandCursor)
+        self.set_button_style(self.ClearButton, "#ff7474", "#ff9d9d", "#ff7474")
 
         self.TextOutput = QTextEdit(self.centralwidget)
         self.TextOutput.setGeometry(QRect(800, 45, 420, 300))
@@ -152,25 +199,31 @@ class Ui_MainWindow(QMainWindow):
             "QTableWidget {"
             "border: 4px solid #90AFFF;"
             "gridline-color: #90AFFF;"
-            "border-radius: 10px;"
             "}"
         )
         self.tableWidget.setStyleSheet(table_style)
 
-        self.trash_button = QPushButton(self.centralwidget, text="🗑")
-        self.trash_button.setGeometry(QRect(1180, 380, 45, 45))
+        self.trashButton = QPushButton(QIcon('trashbin_button.png'), '', self.centralwidget)
+        self.trashButton.setIconSize(QSize(30, 30))
+        self.trashButton.setGeometry(QRect(1180, 380, 45, 45))
+        self.set_button_style(self.trashButton, "#90AFFF", "#7CA0FF", "#a0bbff")
+
+        self.guideButton = QPushButton(QIcon('info_button.png'), '', self.centralwidget)
+        self.guideButton.setIconSize(QSize(25, 25))
+        self.guideButton.setGeometry(QRect(1180, 820, 50, 50))
         button_style = (
             "QPushButton { "
-                "border-radius: 10px;"
-                "padding: 10px;"
-                "font-family: 'Rubik';"
-                "font-size: 15pt;"
-                "background-color: #ffffff;"
-                "} "
-            "QPushButton:hover { background-color: #FF7474 }"
+            "border-radius: 24px;"
+            "padding: 10px;"
+            "font-family: 'Rubik';"
+            "font-size: 28pt;"
+            "background-color: #90AFFF;"
+            "color: #ffffff;" 
+            "} "
+            "QPushButton:hover { background-color: #81a4ff }"
+            "QPushButton:pressed { background-color: #a0bbff }"
         )
-        self.trash_button.setStyleSheet(button_style)
-        self.trash_button.setCursor(Qt.PointingHandCursor)
+        self.guideButton.setStyleSheet(button_style)
 
         self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
         self.InputMatrixSelectorCombo.addItems(["   Матрица\n   смежности", "   Матрица\n   инцидентности"])
@@ -184,16 +237,13 @@ class Ui_MainWindow(QMainWindow):
             "text-align: center;"
             "background-color: #90AFFF;"
             "color: #ffffff;")
-        self.InputMatrixSelectorCombo.setCursor(Qt.PointingHandCursor)
-        
         self.BuildGraphButton = QPushButton(self.centralwidget, text="Построить граф")
         self.BuildGraphButton.setGeometry(QRect(1000, 380, 165, 45))
-        self.BuildGraphButton.setCursor(Qt.PointingHandCursor)
-        self.set_button_style(self.BuildGraphButton, "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.BuildGraphButton, "#90AFFF", "#7CA0FF", "#a0bbff")
         self.setCentralWidget(self.centralwidget)
         QMetaObject.connectSlotsByName(self)
 
-    def set_button_style(self, button, default_color, pressed_color):
+    def set_button_style(self, button, default_color, hover_color, pressed_color):
         button_style = f"""
             QPushButton {{
                 background-color: {default_color};
@@ -204,6 +254,9 @@ class Ui_MainWindow(QMainWindow):
                 font-weight: bold;
             }}
             QPushButton:hover {{
+                background-color: {hover_color};
+            }}
+            QPushButton:pressed {{
                 background-color: {pressed_color};
             }}
         """
@@ -221,7 +274,13 @@ class Ui_MainWindow(QMainWindow):
 
         self.InputMatrixSelectorCombo.currentIndexChanged.connect(self.index_changed)
         self.BuildGraphButton.clicked.connect(self.build_graph)
-        self.trash_button.clicked.connect(self.trash_matrix)
+        self.trashButton.clicked.connect(self.trash_matrix)
+
+        self.guideButton.clicked.connect(self.show_instructions)
+
+    def show_instructions(self):
+        instructions_dialog = InstructionsDialog(self)
+        instructions_dialog.exec_()
 
     def warningPopup(self, title, _text):
         QMessageBox.question(self, title, _text, QMessageBox.Ok, QMessageBox.Ok)
@@ -231,25 +290,24 @@ class Ui_MainWindow(QMainWindow):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
-        
     def toggle_delete_mode(self):
         self.delete = True
-        self.set_button_style(self.DeleteButton, "#FF8383", "#FF5C5C")
-        self.set_button_style(self.VertexModeButton, "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff9d9d", "#ff7474")
+        self.set_button_style(self.VertexModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
 
     def toggle_add_vertex(self):
         self.delete = False
-        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.DeleteButton, "#90AFFF", "#FF7474")
-        self.set_button_style(self.VertexModeButton, "#7DD6DB", "#4BCFD6")
+        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#90AFFF", "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.VertexModeButton, "#8ed6da", "#8ed6da", "#6ba894")
         self.add_mode = "vertex"
 
     def toggle_add_edge(self):
         self.delete = False
-        self.set_button_style(self.VertexModeButton, "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.DeleteButton, "#90AFFF", "#FF7474")
-        self.set_button_style(self.EdgeModeButton, "#7DD6DB", "#4BCFD6")
+        self.set_button_style(self.VertexModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#90AFFF", "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.EdgeModeButton, "#8ed6da", "#8ed6da", "#6ba894")
         self.add_mode = "edge"
 
     def mousePressEvent(self, event):
@@ -327,7 +385,6 @@ class Ui_MainWindow(QMainWindow):
         font = QFont("Rubik", 14)
         painter.setFont(font)
         painter.drawText(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2), Qt.AlignCenter, str(index))
-
         painter.end()
 
     def DrawEdges(self):
@@ -341,20 +398,17 @@ class Ui_MainWindow(QMainWindow):
 
         if (x1 == x2 and y1 == y2):
             painter.drawArc(QRect(x1 - self.vertex_radius * 2, y1 - self.vertex_radius * 2, self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
-
             if weight != -1 and weight != "1":
                 brush = painter.brush()
                 brush.setColor(QColor(Qt.white))
                 brush.setStyle(Qt.SolidPattern)
                 painter.setBrush(brush)
                 painter.drawRect(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18)
-
                 font = QFont("Rubik", 12)
                 painter.setFont(font)
                 painter.drawText(QRectF(x1 - self.vertex_radius * 2 - 10, y1 - self.vertex_radius * 2, 30, 18), Qt.AlignCenter, str(weight))
         else:
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
-
             if (type == 0):
                 angle = math.atan2(y2 - y1, x2 - x1)
                 x2 = x2 - self.vertex_radius * math.cos(angle)
@@ -371,7 +425,6 @@ class Ui_MainWindow(QMainWindow):
                     QPointF(x2 - arrow_len * math.cos(angle - arrow_open_angle), y2 - arrow_len * math.sin(angle - arrow_open_angle)),
                 ]
                 painter.drawConvexPolygon(points)
-
             if weight != -1 and weight != "1":
                 brush = painter.brush()
                 brush.setColor(QColor(Qt.white))
@@ -381,8 +434,8 @@ class Ui_MainWindow(QMainWindow):
                 font = QFont("Rubik", 12)
                 painter.setFont(font)
                 painter.drawText(QRectF(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18), Qt.AlignCenter, str(weight))
-
         painter.end()
+
 
     def paintEvent(self, event):
         self.DrawFrame()
@@ -393,7 +446,7 @@ class Ui_MainWindow(QMainWindow):
 
     def DrawFrame(self):
         painter = QPainter(self)
-        pen = QPen(QColor("#a0bbff"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        pen = QPen(QColor("#90AFFF"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.setBrush(QColor("#ffffff"))
         painter.drawRoundedRect(15, 85, 750, 700, 10, 10)
@@ -465,7 +518,6 @@ class Ui_MainWindow(QMainWindow):
                 item = QTableWidgetItem(str(adj_matrix[i][j]))
                 item.setFont(font)
                 self.tableWidget.setItem(i, j, item)
-                
     def display_incidence_matrix(self):
         if len(self.vertices) == 0 or len(self.edges) == 0:
             self.TextOutput.setText("Пустой граф")
@@ -487,6 +539,18 @@ class Ui_MainWindow(QMainWindow):
             formatted_row = [f"{entry:>{max_width}}" for entry in row]
             output_text += " ".join(formatted_row) + "\n"
         self.TextOutput.setText(output_text)
+
+        self.tableWidget.clear()
+        self.tableWidget.setRowCount(len(incidence_matrix))
+        self.tableWidget.setColumnCount(len(incidence_matrix[0]))
+        font = QFont("Rubik", 12)
+
+
+        for i in range(len(incidence_matrix)):
+            for j in range(len(incidence_matrix[i])):
+                item = QTableWidgetItem(str(incidence_matrix[i][j]))
+                item.setFont(font)
+                self.tableWidget.setItem(i, j, item)
 
     def create_graph(self, vertices_count):
         center_x, center_y = 700 / 2 + 15, 700 / 2 + 15
@@ -574,4 +638,5 @@ if __name__ == '__main__':
     import sys
     app = QApplication(sys.argv)
     window = Ui_MainWindow()
+    window.setWindowIcon(QIcon('icon.ico'))
     sys.exit(app.exec_())

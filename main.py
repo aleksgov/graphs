@@ -178,7 +178,7 @@ class Ui_MainWindow(QMainWindow):
 
         self.ClearButton = QPushButton(self.centralwidget, text="Очистить поле")
         self.ClearButton.setGeometry(QRect(600, 12, 170, 55))
-        self.set_button_style(self.ClearButton, "#ff7474", "#ff9d9d", "#ff7474")
+        self.set_button_style(self.ClearButton, "#FF7474", "#FF5C5C", "#FF7474")
 
         self.TextOutput = QTextEdit(self.centralwidget)
         self.TextOutput.setGeometry(QRect(800, 45, 420, 300))
@@ -223,11 +223,13 @@ class Ui_MainWindow(QMainWindow):
             "QPushButton:hover { background-color: #81a4ff }"
             "QPushButton:pressed { background-color: #a0bbff }"
         )
+        self.guideButton.setCursor(Qt.PointingHandCursor)
         self.guideButton.setStyleSheet(button_style)
 
         self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
         self.InputMatrixSelectorCombo.addItems(["   Матрица\n   смежности", "   Матрица\n   инцидентности"])
         self.InputMatrixSelectorCombo.setGeometry(QRect(790, 380, 190, 45))
+        self.InputMatrixSelectorCombo.setCursor(Qt.PointingHandCursor)
         self.InputMatrixSelectorCombo.setStyleSheet(
             "border: 4px #90AFFF;"
             "border-radius: 8px;"
@@ -260,6 +262,7 @@ class Ui_MainWindow(QMainWindow):
                 background-color: {pressed_color};
             }}
         """
+        button.setCursor(Qt.PointingHandCursor)
         button.setStyleSheet(button_style)
 
     def setupButtons(self):
@@ -290,24 +293,25 @@ class Ui_MainWindow(QMainWindow):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
+
     def toggle_delete_mode(self):
         self.delete = True
-        self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff9d9d", "#ff7474")
-        self.set_button_style(self.VertexModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#FF8383", "#FF5C5C", "#FF5C5C")
+        self.set_button_style(self.VertexModeButton, "#90AFFF", "#7CA0FF", "#7CA0FF")
+        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#7CA0FF", "#7CA0FF")
 
     def toggle_add_vertex(self):
         self.delete = False
-        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.DeleteButton, "#90AFFF", "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.VertexModeButton, "#8ed6da", "#8ed6da", "#6ba894")
+        self.set_button_style(self.EdgeModeButton, "#90AFFF", "#7CA0FF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#90AFFF", "#FF7474", "#FF7474")
+        self.set_button_style(self.VertexModeButton, "#7DD6DB", "#4BCFD6", "#4BCFD6")
         self.add_mode = "vertex"
 
     def toggle_add_edge(self):
         self.delete = False
-        self.set_button_style(self.VertexModeButton, "#90AFFF", "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.DeleteButton, "#90AFFF", "#90AFFF", "#7CA0FF")
-        self.set_button_style(self.EdgeModeButton, "#8ed6da", "#8ed6da", "#6ba894")
+        self.set_button_style(self.VertexModeButton, "#90AFFF", "#7CA0FF", "#7CA0FF")
+        self.set_button_style(self.DeleteButton, "#90AFFF", "#FF7474", "#FF7474")
+        self.set_button_style(self.EdgeModeButton, "#7DD6DB", "#4BCFD6", "#4BCFD6")
         self.add_mode = "edge"
 
     def mousePressEvent(self, event):

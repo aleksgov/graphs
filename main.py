@@ -485,11 +485,19 @@ class Ui_MainWindow(QMainWindow):
             return [None, -1]
 
     def end_edge(self, start_vertex, end_vertex):
-        weight, type = self.ask_for_weight()
-        if weight is not None:
-            self.edges.append([start_vertex, end_vertex, weight, type])
-        if weight is None and type != -1:
-            self.edges.append([start_vertex, end_vertex, weight, type])
+        result = self.ask_for_weight()
+        if result is not None:
+            weight, type = result
+            if weight is not None:
+                edge_exists = any((edge[0] == start_vertex and edge[1] == end_vertex) or (edge[0] == end_vertex and edge[1] == start_vertex) for edge in self.edges)
+                if not edge_exists:
+                    self.edges.append([start_vertex, end_vertex, weight, type])
+                else:
+                    for edge in self.edges:
+                        if (edge[0] == start_vertex and edge[1] == end_vertex) or (edge[0] == end_vertex and edge[1] == start_vertex):
+                            edge[2] = weight
+                            edge[3] = type
+                self.update()
 
     def clear_graph(self):
         self.vertices = []
@@ -530,32 +538,32 @@ class Ui_MainWindow(QMainWindow):
             self.TextOutput.setText("Пустой граф")
             return
 
-        incidence_matrix = [[0 for i in range(len(self.edges))] for j in range(len(self.vertices))]
+        inc_matrix = [[0 for i in range(len(self.edges))] for j in range(len(self.vertices))]
 
         for i, edge in enumerate(self.edges):
             if edge[3] == 0:
-                incidence_matrix[edge[1]][i] = -int(edge[2]) if isinstance(edge[2], str) else -edge[2]
-                incidence_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
+                inc_matrix[edge[1]][i] = -int(edge[2]) if isinstance(edge[2], str) else -edge[2]
+                inc_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
             if edge[3] == 1:
-                incidence_matrix[edge[1]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
-                incidence_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
+                inc_matrix[edge[1]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
+                inc_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
 
-        max_width = max(len(str(entry)) for row in incidence_matrix for entry in row)
+        max_width = max(len(str(entry)) for row in inc_matrix for entry in row)
         output_text = ""
-        for row in incidence_matrix:
+        for row in inc_matrix:
             formatted_row = [f"{entry:>{max_width}}" for entry in row]
             output_text += " ".join(formatted_row) + "\n"
         self.TextOutput.setText(output_text)
 
         self.tableWidget.clear()
-        self.tableWidget.setRowCount(len(incidence_matrix))
-        self.tableWidget.setColumnCount(len(incidence_matrix[0]))
+        self.tableWidget.setRowCount(len(inc_matrix))
+        self.tableWidget.setColumnCount(len(inc_matrix[0]))
         font = QFont("Rubik", 12)
 
 
-        for i in range(len(incidence_matrix)):
-            for j in range(len(incidence_matrix[i])):
-                item = QTableWidgetItem(str(incidence_matrix[i][j]))
+        for i in range(len(inc_matrix)):
+            for j in range(len(inc_matrix[i])):
+                item = QTableWidgetItem(str(inc_matrix[i][j]))
                 item.setFont(font)
                 self.tableWidget.setItem(i, j, item)
 

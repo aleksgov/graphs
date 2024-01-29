@@ -7,61 +7,160 @@ class InstructionsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        layout = QVBoxLayout(self)
-        label_text = (
-            "<h1>Список возможностей приложения:</h1>"
-            "<h2>1. Добавление вершин:</h2>"
-            "<p>• Выберите режим 'Конструктор вершин', нажав ЛКМ на кнопку 'Конструктор вершин'.</p>"
-            "<p>• Щелкните ЛКМ/ПКМ по пустой области в пределах рамки для графа, чтобы добавить новую вершину.</p>"
-            "<p>• Если вершину необходимо переместить, переключитесь в режим 'Конструктор вершин' и перетащите вершину в новое место, зажав ЛКМ/ПКМ на нужную вершину.</p>"
-            "<h2>2. Добавление связей:</h2>"
-            "<p>• Выберите режим 'Конструктор связей', нажав ЛКМ на кнопку 'Конструктор связей'.</p>"
-            "<p>• Чтобы создать связь между двумя вершинами, зажмите ЛКМ/ПКМ на одной вершине и проведите связь до другой вершины.</p>"
-            "<p>• При создании связи вам будет предложено ввести вес ребра и тип («Дуга» или «Ребро»).</p>"
-            "<p>   Примечание: вес необходимо вводить обязательно.</p>"
-            "<h2>3. Удаление вершин:</h2>"
-            "<p>• Выберите режим 'Удалить вершину', нажав ЛКМ на кнопку 'Удалить вершину'.</p>"
-            "<p>• Щелкните ЛКМ/ПКМ по существующей вершине, чтобы удалить её из графа.</p>"
-            "<h2>4. Очистка поля:</h2>"
-            "<p>• Нажмите ЛКМ на кнопку 'Очистить поле', чтобы удалить все вершины и рёбра из графа.</p>"
-            "<h2>5. Вывод матриц:</h2>"
-            "<p>• Вы можете просмотреть матрицу смежности или матрицу инцидентности, нажав ЛКМ на соответствующую кнопку ('Матрица смежности' или 'Матрица инцидентности').</p>"
-            "<p>• Результат отображается в окне текстового вывода.</p>"
-            "<h2>6. Построение графа по матрице:</h2>"
-            "<p>• Выберите тип матрицы ('Матрица смежности' или 'Матрица инцидентности') с помощью выпадающего списка.</p>"
-            "<p>• Введите матрицу в окно текстового вывода.</p>"
-            "<p>• Нажмите ЛКМ на кнопку 'Построить граф' для создания графа на основе введенной матрицы.</p>"
-            "<h2>7. Особенности интерфейса:</h2>"
-            "<p>• Рамка для графа находится в пределах области размером 750x700. Вершины не могут быть созданы или перемещены за пределы этой области.</p>"
-            "<p>• Цвет вершин - синий, цвет рёбер - светло-синий.</p>"
-            "<p>• Рамка и кнопки имеют стилизованный дизайн для улучшения визуального восприятия.</p>"
-            "<h2>8. Выход из приложения:</h2>"
-            "<p>• Приложение может быть закрыто, нажав ЛКМ на крестик в верхнем правом углу окна.</p>"
-            "<p>При использовании приложения рекомендуется внимательно следить за сообщениями об ошибках и предупреждениями в случае неправильного ввода данных или выполнения операций.</p>"
-        )
-        label = QLabel(label_text, self)
-        label.setStyleSheet("font-family: Rubik; font-size: 12pt; color: #1e3b70;")
-        layout.addWidget(label)
+        self.init_ui()
 
-        ok_button = QPushButton("OK", self)
-        ok_button.clicked.connect(self.accept)
-        ok_button.setStyleSheet(
+    def init_ui(self):
+        self.setWindowTitle("Instructions")
+        self.layout = QVBoxLayout(self)
+        self.stack = QStackedWidget(self)
+        self.setStyleSheet("QDialog {background-color: #FFFFFF;}")
+
+        instructions_pages = [
+            {
+                "text": "<h1>Список возможностей приложения:</h1>"
+                        "<h2>1. Добавление вершин:</h2>"
+                        "<p>• Выберите режим 'Конструктор вершин', нажав ЛКМ на кнопку 'Конструктор вершин'.</p>"
+                        "<p>• Щелкните ЛКМ/ПКМ по пустой области в пределах рамки для графа, чтобы добавить новую вершину.</p>"
+                        "<p>• Если вершину необходимо переместить, переключитесь в режим 'Конструктор вершин' и перетащите вершину в новое место, зажав ЛКМ/ПКМ на нужную вершину.</p>",
+                "gif_paths": ["video1.gif", "video1.2.gif"]
+            },
+            {
+                "text": "<h2>2. Добавление связей:</h2>"
+                        "<p>• Выберите режим 'Конструктор связей', нажав ЛКМ на кнопку 'Конструктор связей'.</p>"
+                        "<p>• Чтобы создать связь между двумя вершинами, зажмите ЛКМ/ПКМ на одной вершине и проведите связь до другой вершины.</p>"
+                        "<p>• При создании связи вам будет предложено ввести вес ребра и тип («Дуга» или «Ребро»).</p>",
+                "gif_paths": ["video2.gif"]
+            },
+            {
+                "text": "<h2>3. Удаление вершин:</h2>"
+                        "<p>• Выберите режим 'Удалить вершину', нажав ЛКМ на кнопку 'Удалить вершину'.</p>"
+                        "<p>• Щелкните ЛКМ/ПКМ по существующей вершине, чтобы удалить её из графа.</p>",
+                "gif_paths": ["video3.gif"]
+            },
+            {
+                "text": "<h2>4. Очистка поля:</h2>"
+                        "<p>• Нажмите ЛКМ на кнопку 'Очистить поле', чтобы удалить все вершины и рёбра из графа.</p>",
+                "gif_paths": ["video4.gif"]
+            },
+            {
+                "text": "<h2>5. Вывод матриц:</h2>"
+                        "<p>• Вы можете просмотреть матрицу смежности или матрицу инцидентности, нажав ЛКМ на соответствующую кнопку ('Матрица смежности' или 'Матрица инцидентности').</p>"
+                        "<p>• Результат отображается в окне текстового вывода.</p>",
+                "gif_paths": ["video5.gif"]
+            },
+            {
+                "text": "<h2>6. Построение графа по матрице:</h2>"
+                        "<p>• Выберите тип матрицы ('Матрица смежности' или 'Матрица инцидентности') с помощью выпадающего списка.</p>"
+                        "<p>• Введите матрицу в окно текстового вывода.</p>"
+                        "<p>• Нажмите ЛКМ на кнопку 'Построить граф' для создания графа на основе введенной матрицы.</p>",
+                "gif_paths": ["video6.gif", "video7.gif"]
+            },
+            {
+                "text": "<h2>7. Особенности интерфейса:</h2>"
+                        "<p>• Рамка для графа находится в пределах области размером 750x700. Вершины не могут быть созданы или перемещены за пределы этой области.</p>"
+                        "<p>• Цвет вершин - синий, цвет рёбер - светло-синий.</p>"
+                        "<p>• Рамка и кнопки имеют стилизованный дизайн для улучшения визуального восприятия.</p>",
+                "gif_paths": []
+            },
+            {
+                "text": "<h2>8. Выход из приложения:</h2>"
+                        "<p>• Приложение может быть закрыто, нажав ЛКМ на крестик в верхнем правом углу окна.</p>"
+                        "<p>При использовании приложения рекомендуется внимательно следить за сообщениями об ошибках</p>"
+                        "<p>и предупреждениями в случае неправильного ввода данных или выполнения операций.</p>",
+                "gif_paths": []
+            },
+        ]
+
+        for page_info in instructions_pages:
+            page_widget = QWidget(self)
+            page_layout = QVBoxLayout(page_widget)
+
+            text_label = QLabel(page_info["text"], self)
+            text_label.setStyleSheet("font-family: Rubik; font-size: 12pt; color: #1e3b70;")
+            page_layout.addWidget(text_label)
+
+            gifs_layout = QHBoxLayout()
+            for gif_path in page_info["gif_paths"]:
+                gif_label = QLabel(self)
+                movie = QMovie(gif_path)
+                gif_label.setMovie(movie)                   
+                gif_label.setStyleSheet("border: 4px solid #90AFFF; "
+                                            "border-radius: 10px; ")
+                gif_label.setFixedSize(600, 450)
+                movie.start()
+                gifs_layout.addWidget(gif_label)
+
+            page_layout.addLayout(gifs_layout)
+            self.stack.addWidget(page_widget)
+
+        self.layout.addWidget(self.stack)
+
+        navigation_layout = QHBoxLayout()
+
+        prev_button = QPushButton("<", self)
+        prev_button.clicked.connect(self.prev_page)
+        prev_button.setStyleSheet(
             "QPushButton { "
             "background-color: #90AFFF; "
             "color: #ffffff; "
-            "border-radius: 5px;"
+            "border-radius: 24px;"
             "font-family: Rubik; "
-            "font-size: 11pt; "
+            "font-size: 20pt; "
             "font-weight: bold;"
             "} "
             "QPushButton:hover { background-color: #7CA0FF; }"
         )
-        layout.addWidget(ok_button)
+        prev_button.setFixedSize(50, 50)
+        navigation_layout.addWidget(prev_button)
+        prev_button.setCursor(Qt.PointingHandCursor)
 
-        self.setWindowTitle("Instructions")
+        next_button = QPushButton(">", self)
+        next_button.clicked.connect(self.next_page)
+        next_button.setStyleSheet(
+            "QPushButton { "
+            "background-color: #90AFFF; "
+            "color: #ffffff; "
+            "border-radius: 24px;"
+            "font-family: Rubik; "
+            "font-size: 20pt; "
+            "font-weight: bold;"
+            "} "
+            "QPushButton:hover { background-color: #7CA0FF; }"
+        )
+        next_button.setFixedSize(50, 50)
+        navigation_layout.addWidget(next_button)
+        next_button.setCursor(Qt.PointingHandCursor)
 
-        # Connect the finished signal to deleteLater
+        self.layout.addLayout(navigation_layout)
+
+        exit_button = QPushButton("Выход", self)
+        exit_button.clicked.connect(self.accept)
+        exit_button.setStyleSheet(
+            "QPushButton { "
+            "background-color: #FF7474; "
+            "color: #ffffff; "
+            "border-radius: 12px;"
+            "font-family: Rubik; "
+            "font-size: 18pt; "
+            "font-weight: bold;"
+            "} "
+            "QPushButton:hover { background-color: #FF5C5C; }"
+        )
+        exit_button.setFixedSize(140, 50)
+        self.layout.addWidget(exit_button, alignment=Qt.AlignCenter)
         self.finished.connect(self.deleteLater)
+        exit_button.setCursor(Qt.PointingHandCursor)
+
+    def next_page(self):
+        current_index = self.stack.currentIndex()
+        if current_index < self.stack.count() - 1:
+            self.stack.setCurrentIndex(current_index + 1)
+
+    def prev_page(self):
+        current_index = self.stack.currentIndex()
+        if current_index > 0:
+            self.stack.setCurrentIndex(current_index - 1)
+
 
 class InputDialog(QDialog):
     def __init__(self, parent=None):
@@ -88,9 +187,10 @@ class InputDialog(QDialog):
         )
         buttonBox.setStyleSheet(button_style)
         ok_button = buttonBox.button(QDialogButtonBox.Ok)
-        cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
         ok_button.setStyleSheet(button_style)
         ok_button.setCursor(Qt.PointingHandCursor)
+        
+        cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
         cancel_button.setStyleSheet(button_style)
         cancel_button.setCursor(Qt.PointingHandCursor)
         layout = QFormLayout(self)
@@ -129,9 +229,9 @@ class InputDialog(QDialog):
         buttonBox.button(QDialogButtonBox.Cancel).setFixedSize(100, 24)
         buttonBox.move(150, 200)
         layout.addWidget(buttonBox)
+        
     def getInputs(self):
         return [self.input.text(), self.comboBox.currentIndex()]
-
 
 class Ui_MainWindow(QMainWindow):
     def __init__(self):
@@ -443,7 +543,6 @@ class Ui_MainWindow(QMainWindow):
                 painter.drawText(QRectF(x2 - (x2 - x1) / 4 - 15, y2 - (y2 - y1) / 4 - 9, 30, 18), Qt.AlignCenter, str(weight))
         painter.end()
 
-
     def paintEvent(self, event):
         self.DrawFrame()
         if (self.start_vertex != -1):
@@ -533,6 +632,7 @@ class Ui_MainWindow(QMainWindow):
                 item = QTableWidgetItem(str(adj_matrix[i][j]))
                 item.setFont(font)
                 self.tableWidget.setItem(i, j, item)
+                
     def display_incidence_matrix(self):
         if len(self.vertices) == 0 or len(self.edges) == 0:
             self.TextOutput.setText("Пустой граф")

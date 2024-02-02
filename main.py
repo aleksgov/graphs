@@ -3,6 +3,43 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import math
 
+class WarningDialog(QDialog):
+    def __init__(self, title, text):
+        super().__init__()
+
+        self.setWindowTitle(title)
+        self.setFixedSize(350, 260)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setStyleSheet("QDialog { border: 4px solid #f65656; border-radius: 5px; background: #ffffff;}")
+
+        error_icon = QPixmap('error2.png')
+        error_label = QLabel(self)
+        error_label.setPixmap(error_icon.scaled(60, 60))
+        error_label.setAlignment(Qt.AlignCenter)
+        error_label.setGeometry(0, 30, 350, 60)
+
+        text_label = QLabel(self)
+        text_label.setAlignment(Qt.AlignCenter)
+        text_label.setGeometry(0, 105, 350, 120)
+        text_label.setText(text)
+        font = QFont("Rubik", 16)
+        text_label.setFont(font)
+        text_label.setWordWrap(True)
+
+        close_button = QPushButton("Закрыть", self)
+        close_button.setStyleSheet(
+            "QPushButton { "
+            "background-color: #f65656; "
+            "color: #ffffff; "
+            "border-radius: 5px;"
+            "font-family: Rubik; "
+            "font-size: 14pt; "
+            "} "
+            "QPushButton:hover { background-color: #FF7474; }"
+        )
+        close_button.clicked.connect(self.reject)
+        close_button.setGeometry(0, 215, 350, 45)
+
 class InstructionsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -76,7 +113,7 @@ class InstructionsDialog(QDialog):
             page_layout = QVBoxLayout(page_widget)
 
             text_label = QLabel(page_info["text"], self)
-            text_label.setStyleSheet("font-family: Rubik; font-size: 12pt; color: #1e3b70;")
+            text_label.setStyleSheet("font-family: Rubik; font-size: 14pt; color: #1e3b70;")
             page_layout.addWidget(text_label)
 
             gifs_layout = QHBoxLayout()
@@ -131,6 +168,7 @@ class InstructionsDialog(QDialog):
         next_button.setCursor(Qt.PointingHandCursor)
 
         self.layout.addLayout(navigation_layout)
+
 
         exit_button = QPushButton("Выход", self)
         exit_button.clicked.connect(self.accept)
@@ -357,6 +395,10 @@ class Ui_MainWindow(QMainWindow):
         self.setCentralWidget(self.centralwidget)
         QMetaObject.connectSlotsByName(self)
 
+    def warningPopup(self, title, _text):
+        dialog = WarningDialog(title, _text)
+        dialog.exec_()
+
     def set_button_style(self, button, default_color, hover_color, pressed_color):
         button_style = f"""
             QPushButton {{
@@ -396,9 +438,6 @@ class Ui_MainWindow(QMainWindow):
     def show_instructions(self):
         instructions_dialog = InstructionsDialog(self)
         instructions_dialog.exec_()
-
-    def warningPopup(self, title, _text):
-        QMessageBox.question(self, title, _text, QMessageBox.Ok, QMessageBox.Ok)
 
     def trash_matrix(self):
         self.TextOutput.clear()
@@ -705,17 +744,17 @@ class Ui_MainWindow(QMainWindow):
         self.clear_graph()
 
         if len(lines[0]) == 0:
-            self.warningPopup("Ошибка!", "Формат матрицы неверен.")
+            self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Формат матрицы неверен.<br><br>")
             return
 
         try:
             matrix = [list(map(int, line.split())) for line in lines]
         except ValueError:
-            self.warningPopup("Ошибка!", "Формат матрицы неверен.")
+            self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Формат матрицы неверен.<br><br>")
             return
 
         if any(len(row) != len(matrix) for row in matrix):
-            self.warningPopup("Ошибка!", "Матрица должна быть квадратной.")
+            self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Матрица должна быть квадратной.<br><br>")
             return
 
         self.create_graph(len(matrix))
@@ -737,18 +776,18 @@ class Ui_MainWindow(QMainWindow):
         self.clear_graph()
 
         if len(lines[0]) == 0:
-            self.warningPopup("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Формат матрицы неверен.<br><br>")
             return
 
         try:
             matrix = [list(map(int, line.split())) for line in lines]
         except ValueError:
-            self.warningPopup("Ошибка!", "Формат матрицы неверен")
+            self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Формат матрицы неверен.<br><br>")
             return
 
         any_row = matrix[0]
         if any(len(row) != len(any_row) for row in matrix):
-            self.warningPopup("Ошибка!", "Матрица должна быть правильных размеров")
+            self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Матрица должна быть требуемых размеров.<br><br>")
             return
 
         num_vertices, num_edges = len(matrix), len(matrix[0])

@@ -12,7 +12,7 @@ class WarningDialog(QDialog):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setStyleSheet("QDialog { border: 4px solid #f65656; border-radius: 5px; background: #ffffff;}")
 
-        error_icon = QPixmap('error2.png')
+        error_icon = QPixmap('error.png')
         error_label = QLabel(self)
         error_label.setPixmap(error_icon.scaled(60, 60))
         error_label.setAlignment(Qt.AlignCenter)

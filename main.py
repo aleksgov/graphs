@@ -175,6 +175,7 @@ class InstructionsDialog(QDialog):
 
         self.layout.addLayout(navigation_layout)
 
+
         exit_button = QPushButton("Выход", self)
         exit_button.clicked.connect(self.accept)
         exit_button.setStyleSheet(
@@ -279,11 +280,10 @@ class InputDialog(QDialog):
 class Delegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         super().paint(painter, option, index)
-        if (((1 + index.row()) % 1 == 0) and (1 + index.column()) % 1 == 0):
+        if (((1+index.row()) % 1 == 0) and (1+index.column()) % 1 == 0):
             painter.setPen(QPen(QColor("#90AFFF"), 2))
             painter.drawLine(option.rect.bottomLeft(), option.rect.bottomRight())
             painter.drawLine(option.rect.topRight(), option.rect.bottomRight())
-
 
 class Ui_MainWindow(QMainWindow):
     def __init__(self):
@@ -580,15 +580,13 @@ class Ui_MainWindow(QMainWindow):
             painter.drawArc(QRect(int(x1) - self.vertex_radius * 2, int(y1) - self.vertex_radius * 2, 
                                   self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
             if weight != -1:
-            if weight != -1 and weight != "1":
                 text_x = int(x1) - self.vertex_radius * 2
                 text_y = int(y1) - self.vertex_radius * 2
                 draw_weight = True
-
         else:
             if (type == 0):
 
-                # ================= bezier curve ==================
+                #================= bezier curve ==================
                 angle1 = math.atan2(y2 - y1, x2 - x1)
 
                 x2 = x2 - self.vertex_radius * math.cos(angle1)
@@ -597,15 +595,15 @@ class Ui_MainWindow(QMainWindow):
                 length = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
                 points = [QPoint(length, 0), QPoint(int(length / 3), 30), QPoint(int(length / 3 * 2), 30)]
                 for i in range(3):
-                    x = x1 + points[i].x() * math.cos(angle1) - points[i].y() * math.sin(angle1)
-                    y = y1 + points[i].x() * math.sin(angle1) + points[i].y() * math.cos(angle1)
+                    x = x1 + points [i].x() * math.cos(angle1) - points [i].y() * math.sin(angle1)
+                    y = y1 + points [i].x() * math.sin(angle1) + points [i].y() * math.cos(angle1)
                     points[i] = QPoint(x, y)
-                path = QPainterPath(QPoint(x1 + int(self.vertex_radius * math.cos(angle1)),
-                                           y1 + int(self.vertex_radius * math.sin(angle1))))
+                path = QPainterPath(QPoint( x1 + int(self.vertex_radius * math.cos(angle1)), 
+                                            y1 + int(self.vertex_radius * math.sin(angle1))))
                 path.cubicTo(points[1], points[2], points[0])
                 painter.drawPath(path)
 
-                # ===================== arrow =====================
+                #===================== arrow =====================
                 angle2 = math.atan2(y2 - points[2].y(), x2 - points[2].x())
                 arrow_len = 15
                 arrow_open_angle = math.pi / 10
@@ -622,7 +620,7 @@ class Ui_MainWindow(QMainWindow):
                 ]
                 painter.drawConvexPolygon(arrow_points)
 
-                if weight != -1 and weight != "1":
+                if weight != -1:
                     text_x = points[2].x()
                     text_y = points[2].y()
                     draw_weight = True
@@ -630,7 +628,7 @@ class Ui_MainWindow(QMainWindow):
             if (type == 1):
                 painter.drawLine(int(x1), int(y1), int(x2), int(y2))
 
-                if weight != -1 and weight != "1":
+                if weight != -1:
                     text_x = int(x2) - (x2 - x1) // 4
                     text_y = int(y2) - (y2 - y1) // 4
                     draw_weight = True
@@ -646,9 +644,8 @@ class Ui_MainWindow(QMainWindow):
             brush.setStyle(Qt.SolidPattern)
             painter.setBrush(brush)
             painter.setFont(font)
-            painter.drawRect(text_x - width // 2 - 2, text_y - height // 2 - 2, width + 4, height + 4)
-            painter.drawText(QRectF(text_x - width // 2, text_y - height // 2, width, height), Qt.AlignCenter,
-                             str(weight))
+            painter.drawRect(text_x - width//2 - 2, text_y - height//2 - 2, width + 4, height + 4)
+            painter.drawText(QRectF(text_x - width//2, text_y - height//2, width, height), Qt.AlignCenter, str(weight))
 
         painter.end()
 
@@ -686,12 +683,13 @@ class Ui_MainWindow(QMainWindow):
             if self.dialog.exec():
                 weight, type = self.dialog.getInputs()
                 if weight.strip() == "":
-                    return ["1", type]
+                    self.warningPopup(" ", "<h3>&nbsp;Предупреждение!</h3>\n&nbsp;&nbsp;Введите вес.<br><br>")
+                    weight = -1
+                    continue
                 try:
                     weight = int(weight)
                     if weight < 0:
-                        self.warningPopup(" ",
-                                          "<h3>&nbsp;Предупреждение!</h3>\n&nbsp;&nbsp;Вес должен быть положительным.<br><br>")
+                        self.warningPopup(" ", "<h3>&nbsp;Предупреждение!</h3>\n&nbsp;&nbsp;Вес должен быть положительным.<br><br>")
                         continue
                     return [weight, type]
                 except ValueError:
@@ -700,7 +698,7 @@ class Ui_MainWindow(QMainWindow):
             else:
                 return [None, -1]
 
-    def end_edge(self, start_vertex, end_vertex, weight, type):
+    def end_edge(self, start_vertex, end_vertex, weight, type):        
         i = 0
         while i < len(self.edges):
             edge = self.edges[i]
@@ -715,13 +713,13 @@ class Ui_MainWindow(QMainWindow):
                         continue
 
             if (type != edge[3]):
-                if (edge[0] == start_vertex and edge[1] == end_vertex) or \
-                        (edge[0] == end_vertex and edge[1] == start_vertex):
+                if  (edge[0] == start_vertex and edge[1] == end_vertex) or \
+                    (edge[0] == end_vertex and edge[1] == start_vertex):
                     self.edges.pop(i)
                     continue
-
+            
             i += 1
-
+                
         self.edges.append([start_vertex, end_vertex, weight, type])
 
         self.update()
@@ -779,7 +777,7 @@ class Ui_MainWindow(QMainWindow):
         max_width = max(len(str(entry)) for row in inc_matrix for entry in row)
         output_text = ""
         for row in inc_matrix:
-            formatted_row = [f"{entry:>{max_width}}" for entry in row]
+            formatted_row = [f"{entry:>{max_width}}"  for entry in row]
             output_text += " ".join(formatted_row) + "\n"
         self.TextOutput.setText(output_text)
 
@@ -850,8 +848,7 @@ class Ui_MainWindow(QMainWindow):
 
         any_row = matrix[0]
         if any(len(row) != len(any_row) for row in matrix):
-            self.warningPopup(" ",
-                              "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Матрица должна быть требуемых размеров.<br><br>")
+            self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Матрица должна быть требуемых размеров.<br><br>")
             return
 
         num_vertices, num_edges = len(matrix), len(matrix[0])
@@ -876,7 +873,6 @@ class Ui_MainWindow(QMainWindow):
                         ended = True
             if (not ended):
                 self.end_edge(start_vertex, start_vertex, start_weight, 0)
-
 
 if __name__ == '__main__':
     import sys

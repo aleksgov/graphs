@@ -3,6 +3,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import math
 
+from dataclasses import dataclass
+
 class WarningDialog(QDialog):
     def __init__(self, title, text):
         super().__init__()
@@ -42,6 +44,7 @@ class WarningDialog(QDialog):
         close_button.clicked.connect(self.reject)
         close_button.setGeometry(0, 215, 350, 45)
 
+
 class InstructionsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -60,7 +63,7 @@ class InstructionsDialog(QDialog):
                         "<h2>1. Добавление вершин:</h2>"
                         "<p>• Выберите режим 'Конструктор вершин', нажав ЛКМ на кнопку 'Конструктор вершин'.</p>"
                         "<p>• Щелкните ЛКМ/ПКМ по пустой области в пределах рамки для графа, чтобы добавить новую вершину.</p>"
-                        "<p>• Если вершину необходимо переместить, переключитесь в режим 'Конструктор вершин' и перетащите вершину в новое место, зажав ЛКМ/ПКМ на нужную вершину.</p>",
+                        "<p>• Если вершину необходимо переместить, переключитесь в режим 'Конструктор вершин' и <br>перетащите вершину в новое место, зажав ЛКМ/ПКМ на нужную вершину.</p>",
                 "gif_paths": ["video1.gif", "video1.2.gif"]
             },
             {
@@ -83,7 +86,7 @@ class InstructionsDialog(QDialog):
             },
             {
                 "text": "<h2>5. Вывод матриц:</h2>"
-                        "<p>• Вы можете просмотреть матрицу смежности или матрицу инцидентности, нажав ЛКМ на соответствующую кнопку ('Матрица смежности' или 'Матрица инцидентности').</p>"
+                        "<p>• Вы можете просмотреть матрицу смежности или матрицу инцидентности, нажав <br>ЛКМ на соответствующую кнопку ('Матрица смежности' или 'Матрица инцидентности').</p>"
                         "<p>• Результат отображается в окне текстового вывода.</p>",
                 "gif_paths": ["video5.gif"]
             },
@@ -96,14 +99,14 @@ class InstructionsDialog(QDialog):
             },
             {
                 "text": "<h2>7. Особенности интерфейса:</h2>"
-                        "<p>• Рамка для графа находится в пределах области размером 750x700. Вершины не могут быть созданы или перемещены за пределы этой области.</p>"
+                        "<p>• Рамка для графа находится в пределах области наибольшей синей рамки. <br>Вершины не могут быть созданы или перемещены за пределы этой области.</p>"
                         "<p>• Цвет вершин - синий, цвет рёбер - светло-синий.</p>"
                         "<p>• Рамка и кнопки имеют стилизованный дизайн для улучшения визуального восприятия.</p>",
                 "gif_paths": []
             },
             {
                 "text": "<h2>8. Выход из приложения:</h2>"
-                        "<p>• Приложение может быть закрыто, нажав ЛКМ на крестик в верхнем правом углу окна.</p>"
+                        "<p>• Приложение может быть закрыто при нажатии ЛКМ на крестик в верхнем правом углу окна.</p>"
                         "<p>При использовании приложения рекомендуется внимательно следить за сообщениями об ошибках</p>"
                         "<p>и предупреждениями в случае неправильного ввода данных или выполнения операций.</p>",
                 "gif_paths": []
@@ -208,73 +211,72 @@ class InputDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-        self.setStyleSheet("QDialog {background-color: #e8f3fc;}")
-        self.setWindowTitle(" ")
-
-        buttonBox.button(QDialogButtonBox.Ok).setText("Принять")
-        buttonBox.button(QDialogButtonBox.Cancel).setText("Отмена")
         button_style = (
             "QPushButton { "
-            "background-color: #90AFFF; "
-            "color: #ffffff; "
-            "border-radius: 5px;"
-            "font-family: Rubik; "
-            "font-size: 11pt; "
-            "font-weight: bold;"
+                "background-color: #90AFFF; "
+                "color: #ffffff; "
+                "border-radius: 5px;"
+                "font-size: 11pt; "
+                "font-weight: bold;"
             "} "
-            "QPushButton:hover { background-color: #7CA0FF; }"
+            "QPushButton:hover { "
+                "background-color: #7CA0FF; "
+            "}"
         )
-        buttonBox.setStyleSheet(button_style)
-        ok_button = buttonBox.button(QDialogButtonBox.Ok)
-        ok_button.setStyleSheet(button_style)
-        ok_button.setCursor(Qt.PointingHandCursor)
-
-        cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
-        cancel_button.setStyleSheet(button_style)
-        cancel_button.setCursor(Qt.PointingHandCursor)
-        layout = QFormLayout(self)
-
-        label = QLabel("Введите вес:", self)
-        label.setStyleSheet("font-family: Rubik; font-size: 11pt; color: #1e3b70;")
-        self.input = QLineEdit(self)
-        self.input.setStyleSheet(
+        input_style = (
             "border: 4px #90AFFF;"
             "border-radius: 8px;"
             "padding: 2px;"
-            "font-family: 'Rubik';"
             "font-size: 11pt;"
             "font-weight: bold;"
             "text-align: center;"
             "background-color: #90AFFF;"
-            "color: #ffffff;")
+            "color: #ffffff;"
+        )
+        self.setWindowTitle(" ")
+        layout = QFormLayout(self)
+        self.setStyleSheet("InputDialog {background-color: #e8f3fc; font-family: Rubik; }")
 
+
+        label = QLabel("Введите вес:", self)
+        label.setStyleSheet("font-size: 11pt; color: #1e3b70;")
+        self.input = QLineEdit(self)
+        self.input.setStyleSheet(input_style)
         layout.addRow(label, self.input)
+
 
         self.comboBox = QComboBox(self)
         self.comboBox.addItem("Дуга")
         self.comboBox.addItem("Ребро")
-        self.comboBox.setStyleSheet(
-            "border: 4px #90AFFF;"
-            "border-radius: 8px;"
-            "padding: 2px; "
-            "font-family: 'Rubik';"
-            "font-size: 11pt;"
-            "font-weight: bold;"
-            "text-align: center;"
-            "background-color: #90AFFF;"
-            "color: #ffffff;")
+        self.comboBox.setStyleSheet(input_style)
         self.comboBox.setCursor(Qt.PointingHandCursor)
         layout.addWidget(self.comboBox)
-        buttonBox.button(QDialogButtonBox.Ok).setFixedSize(100, 24)
-        buttonBox.button(QDialogButtonBox.Cancel).setFixedSize(100, 24)
+
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        ok_button = buttonBox.button(QDialogButtonBox.Ok)
+        ok_button.setText("Принять")
+        ok_button.setStyleSheet(button_style)
+        ok_button.setCursor(Qt.PointingHandCursor)
+        ok_button.setFixedSize(100, 24)
+
+        cancel_button = buttonBox.button(QDialogButtonBox.Cancel)
+        cancel_button.setText("Отмена")
+        cancel_button.setStyleSheet(button_style)
+        cancel_button.setCursor(Qt.PointingHandCursor)
+        cancel_button.setFixedSize(100, 24)
+
         buttonBox.move(150, 200)
         layout.addWidget(buttonBox)
 
     def getInputs(self):
-        return [self.input.text(), self.comboBox.currentIndex()]
+        result = [self.input.text(), self.comboBox.currentIndex()]
+        self.input.setText("")
+        return result
+
 
 class Delegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
@@ -285,13 +287,27 @@ class Delegate(QStyledItemDelegate):
             painter.drawLine(option.rect.topRight(), option.rect.bottomRight())
 
 
+@dataclass
+class Edge:
+    start_index: int
+    end_index: int
+    weight: int
+    type: int           #0 - oriented, 1 - non-oriented
+
+
+@dataclass
+class Vertex:
+    x : int
+    y : int
+    weight : int
+
+
 class Ui_MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setupUi()
+        self.drawing_board_size = QRectF(15, 85, 750, 700)
         self.vertices = []
         self.edges = []
-        self.edge_mode = "edge"
         self.matrix_weight_mode = "no_weight"
         self.parse_matrix_mode = "adj"
         self.add_mode = "edge"
@@ -301,42 +317,36 @@ class Ui_MainWindow(QMainWindow):
         self.cursor_pos = [0, 0]
         self.delete = False
         self.setupUi()
-        self.setupButtons()
-        self.show()
+        self.setupButtonsConnections()
         self.toggle_add_vertex()
+        self.setMinimumSize(960, 720)
+        self.resize(1250, 900)
+        self.show()
 
     def setupUi(self):
         self.dialog = InputDialog(self)
         self.setObjectName("MainWindow")
-        self.resize(1250, 900)
         self.setWindowTitle("Graph Drawer")
         self.centralwidget = QWidget(self)
         self.setStyleSheet("QMainWindow {background-color: #e8f3fc;}")
 
         self.DisplayAdjMatrixButton = QPushButton(self.centralwidget, text="Матрица\nсмежности")
-        self.DisplayAdjMatrixButton.setGeometry(QRect(160, 810, 180, 64))
         self.set_button_style(self.DisplayAdjMatrixButton, "#90AFFF", "#7CA0FF", "#a0bbff")
 
         self.DisplayIncMatrixButton = QPushButton(self.centralwidget, text="Матрица\nинцидентности")
-        self.DisplayIncMatrixButton.setGeometry(QRect(400, 810, 180, 64))
         self.set_button_style(self.DisplayIncMatrixButton, "#90AFFF", "#7CA0FF", "#a0bbff")
 
         self.EdgeModeButton = QPushButton(self.centralwidget, text="Конструктор\nсвязей")
-        self.EdgeModeButton.setGeometry(QRect(10, 12, 170, 55))
 
         self.VertexModeButton = QPushButton(self.centralwidget, text="Конструктор\nвершин")
-        self.VertexModeButton.setGeometry(QRect(207, 12, 170, 55))
 
         self.DeleteButton = QPushButton(self.centralwidget, text="Удалить\nвершину")
-        self.DeleteButton.setGeometry(QRect(403, 12, 170, 55))
         self.set_button_style(self.DeleteButton, "#ff9d9d", "#ff7474", "#ff7474")
 
         self.ClearButton = QPushButton(self.centralwidget, text="Очистить поле")
-        self.ClearButton.setGeometry(QRect(600, 12, 170, 55))
         self.set_button_style(self.ClearButton, "#FF7474", "#FF5C5C", "#FF7474")
 
         self.TextOutput = QTextEdit(self.centralwidget)
-        self.TextOutput.setGeometry(QRect(800, 45, 420, 300))
         font = QFont("Rubik", 14)
         self.TextOutput.setFont(font)
         self.TextOutput.setStyleSheet("border: 4px solid #90AFFF; "
@@ -346,32 +356,41 @@ class Ui_MainWindow(QMainWindow):
         self.TextOutput.setWordWrapMode(QTextOption.NoWrap)
 
         self.tableWidget = QTableWidget(self.centralwidget)
-        self.tableWidget.setGeometry(QRect(800, 450, 420, 220))
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnWidth(2, 240)
-        table_style = (
-            "QTableWidget {"
-            "border: 4px solid #90AFFF;"
-            "gridline-color: #90AFFF;"
-            "}"
-        )
+        table_style = """
+            QTableView {
+            }
+            QTableView QTableCornerButton::section {
+                background: red;
+                border: 2px outset red;
+            }
+            QTableView::indicator:unchecked {
+                background-color: #FF0000;
+            }
+            QTableView {
+                background-color: #e8f3fc;
+                border: 4px solid #90AFFF;
+                border-radius: 10px;
+                padding: 10px;
+                gridline-color: #90AFFF;
+                selection-background-color: #c0dcf4;
+            }"""
         self.tableWidget.setStyleSheet(table_style)
         delegate = Delegate(self.tableWidget)
         self.tableWidget.setItemDelegate(delegate)
-        # self.tableWidget.setShowGrid(0)
+        self.tableWidget.setShowGrid(0)
 
         self.trashButton = QPushButton(QIcon('trashbin_button.png'), '', self.centralwidget)
         self.trashButton.setIconSize(QSize(30, 30))
-        self.trashButton.setGeometry(QRect(1180, 380, 45, 45))
         self.set_button_style(self.trashButton, "#90AFFF", "#7CA0FF", "#a0bbff")
 
         self.guideButton = QPushButton(QIcon('info_button.png'), '', self.centralwidget)
         self.guideButton.setIconSize(QSize(25, 25))
-        self.guideButton.setGeometry(QRect(1180, 820, 50, 50))
         button_style = (
             "QPushButton { "
-            "border-radius: 24px;"
+            "border-radius: 22px;"
             "padding: 10px;"
             "font-family: 'Rubik';"
             "font-size: 28pt;"
@@ -386,7 +405,6 @@ class Ui_MainWindow(QMainWindow):
 
         self.InputMatrixSelectorCombo = QComboBox(self.centralwidget)
         self.InputMatrixSelectorCombo.addItems(["   Матрица\n   смежности", "   Матрица\n   инцидентности"])
-        self.InputMatrixSelectorCombo.setGeometry(QRect(790, 380, 190, 45))
         self.InputMatrixSelectorCombo.setCursor(Qt.PointingHandCursor)
         self.InputMatrixSelectorCombo.setStyleSheet(
             "border: 4px #90AFFF;"
@@ -398,10 +416,57 @@ class Ui_MainWindow(QMainWindow):
             "background-color: #90AFFF;"
             "color: #ffffff;")
         self.BuildGraphButton = QPushButton(self.centralwidget, text="Построить граф")
-        self.BuildGraphButton.setGeometry(QRect(1000, 380, 165, 45))
         self.set_button_style(self.BuildGraphButton, "#90AFFF", "#7CA0FF", "#a0bbff")
         self.setCentralWidget(self.centralwidget)
         QMetaObject.connectSlotsByName(self)
+
+    def setupGeometry(self, width, height):
+        window_border = 20
+        columns_padding = 30
+
+        width -= window_border * 2 + columns_padding
+        height -= window_border * 2
+
+        left_column_width = int(width / 7 * 4)
+        left_column_lines_padding = 20
+
+        top_buttons_padding = 20
+        top_butons_width = int((left_column_width - top_buttons_padding * 3) / 4)
+        top_buttons_height = 55
+
+        bottom_buttons_padding = 40
+        bottom_buttons_width = min(180, int((left_column_width - bottom_buttons_padding) / 2))
+        bottom_buttons_height = 64
+
+        right_column_lines_padding = 35
+        right_column_width = width - left_column_width
+
+        text_output_height = int(height / 3)
+        table_widget_height = int(height / 4)
+
+        trash_button_size = 45
+        
+        right_buttons_padding = 15
+        right_buttons_width = int((right_column_width - trash_button_size - right_buttons_padding * 2) / 2)
+
+        self.drawing_board_size = QRectF(window_border, window_border + top_buttons_height + left_column_lines_padding, left_column_width, height - top_buttons_height - bottom_buttons_height - left_column_lines_padding * 2)
+        self.DisplayAdjMatrixButton.setGeometry(QRect(window_border + int(left_column_width / 2) - int(bottom_buttons_padding / 2) - bottom_buttons_width, window_border + height - bottom_buttons_height, bottom_buttons_width, bottom_buttons_height))
+        self.DisplayIncMatrixButton.setGeometry(QRect(window_border + int(left_column_width / 2) + int(bottom_buttons_padding / 2), window_border + height - bottom_buttons_height, bottom_buttons_width, bottom_buttons_height))
+        self.EdgeModeButton.setGeometry(QRect(window_border, window_border, top_butons_width, top_buttons_height))
+        self.VertexModeButton.setGeometry(QRect(window_border + (top_butons_width + top_buttons_padding), window_border, top_butons_width, top_buttons_height))
+        self.DeleteButton.setGeometry(QRect(window_border + (top_butons_width + top_buttons_padding) * 2, window_border, top_butons_width, top_buttons_height))
+        self.ClearButton.setGeometry(QRect(window_border + (top_butons_width + top_buttons_padding) * 3, window_border, top_butons_width, top_buttons_height))
+        self.TextOutput.setGeometry(QRect(window_border + left_column_width + columns_padding, window_border, right_column_width, text_output_height))
+        self.tableWidget.setGeometry(QRect(window_border + left_column_width + columns_padding, window_border + text_output_height + right_column_lines_padding * 2 + trash_button_size, right_column_width, table_widget_height))
+        self.InputMatrixSelectorCombo.setGeometry(QRect(window_border + left_column_width + columns_padding, window_border + text_output_height + right_column_lines_padding, right_buttons_width, trash_button_size))
+        self.BuildGraphButton.setGeometry(QRect(window_border + left_column_width + columns_padding + right_buttons_padding + right_buttons_width, window_border + text_output_height + right_column_lines_padding, right_buttons_width, trash_button_size))
+        self.trashButton.setGeometry(QRect(window_border + left_column_width + columns_padding + right_buttons_padding * 2 + right_buttons_width * 2, window_border + text_output_height + right_column_lines_padding, trash_button_size, trash_button_size))
+        self.guideButton.setGeometry(QRect(window_border + width + columns_padding - trash_button_size, window_border + height - trash_button_size, trash_button_size, trash_button_size))
+
+    def clipVertices(self):
+        for vertex in self.vertices:
+            vertex[0] = min(max(self.drawing_board_size.x() + self.vertex_radius, vertex[0]), self.drawing_board_size.x() + self.drawing_board_size.width() - self.vertex_radius)
+            vertex[1] = min(max(self.drawing_board_size.y() + self.vertex_radius, vertex[1]), self.drawing_board_size.y() + self.drawing_board_size.height() - self.vertex_radius)
 
     def warningPopup(self, title, _text):
         dialog = WarningDialog(title, _text)
@@ -427,7 +492,7 @@ class Ui_MainWindow(QMainWindow):
         button.setCursor(Qt.PointingHandCursor)
         button.setStyleSheet(button_style)
 
-    def setupButtons(self):
+    def setupButtonsConnections(self):
         self.DisplayAdjMatrixButton.clicked.connect(self.display_adjacency_matrix)
         self.DisplayIncMatrixButton.clicked.connect(self.display_incidence_matrix)
 
@@ -473,44 +538,48 @@ class Ui_MainWindow(QMainWindow):
         self.set_button_style(self.EdgeModeButton, "#7DD6DB", "#4BCFD6", "#4BCFD6")
         self.add_mode = "edge"
 
+    def index_changed(self, index):
+        if index == 0:
+            self.parse_matrix_mode = "adj"
+        if index == 1:
+            self.parse_matrix_mode = "inc"
+
     def mousePressEvent(self, event):
-        if (15 + self.vertex_radius < event.x() < 765 - self.vertex_radius and 85 + self.vertex_radius < event.y() < 785 - self.vertex_radius):
+        if (self.drawing_board_size.x() + self.vertex_radius < event.x() < self.drawing_board_size.x() + self.drawing_board_size.width() - self.vertex_radius and \
+            self.drawing_board_size.y() + self.vertex_radius < event.y() < self.drawing_board_size.y() + self.drawing_board_size.height() - self.vertex_radius):
             if (self.delete):
                 for i, vertex in enumerate(self.vertices):
-                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(
-                            vertex[1] - event.y()) < self.vertex_radius):
+                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
                         self.vertices.pop(i)
                         j = 0
                         while j < len(self.edges):
-                            if (self.edges[j][0] == i or self.edges[j][1] == i):
+                            if (self.edges[j].start_index == i or self.edges[j].end_index == i):
                                 self.edges.pop(j)
                                 continue
-                            if (self.edges[j][0] > i):
-                                self.edges[j][0] -= 1
-                            if (self.edges[j][1] > i):
-                                self.edges[j][1] -= 1
+                            if (self.edges[j].start_index > i):
+                                self.edges[j].start_index -= 1
+                            if (self.edges[j].end_index > i):
+                                self.edges[j].end_index -= 1
                             j += 1
                         break
+
             elif (self.add_mode == "vertex"):
-                i = 0
-                while i < len(self.vertices):
-                    if (abs(self.vertices[i][0] - event.x()) < self.vertex_radius and abs(
-                            self.vertices[i][1] - event.y()) < self.vertex_radius):
+                for i in range(len(self.vertices)):
+                    if (abs(self.vertices[i][0] - event.x()) < self.vertex_radius and abs(self.vertices[i][1] - event.y()) < self.vertex_radius):
                         self.dragged_vertex_index = i
                         break
-                    i += 1
                 else:
-                    # self.DrawVertex(self, event.x(), event.y(), str(len(self.vertices) + 1))
                     self.vertices.append([event.x(), event.y(), 1])
                     self.update()
+
             elif (self.add_mode == "edge"):
                 for i, vertex in enumerate(self.vertices):
-                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(
-                            vertex[1] - event.y()) < self.vertex_radius):
+                    if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
                         self.start_vertex = i
 
     def mouseMoveEvent(self, event):
-        if (15 + self.vertex_radius < event.x() < 765 - self.vertex_radius and 85 + self.vertex_radius < event.y() < 785 - self.vertex_radius):
+        if (self.drawing_board_size.x() + self.vertex_radius < event.x() < self.drawing_board_size.x() + self.drawing_board_size.width() - self.vertex_radius and \
+            self.drawing_board_size.y() + self.vertex_radius < event.y() < self.drawing_board_size.y() + self.drawing_board_size.height() - self.vertex_radius):
             if (self.dragged_vertex_index != -1):
                 self.vertices[self.dragged_vertex_index][0] = event.x()
                 self.vertices[self.dragged_vertex_index][1] = event.y()
@@ -523,18 +592,36 @@ class Ui_MainWindow(QMainWindow):
             self.dragged_vertex_index = -1
             self.start_vertex = -1
 
+    def ask_for_weight(self):
+            weight = -1
+            while int(weight) < 0:
+                if self.dialog.exec():
+                    weight, type = self.dialog.getInputs()
+                    try:
+                        if weight.strip() == "":
+                            return ["1", type]
+                        weight = int(weight)
+                        if weight < 0:
+                            self.warningPopup(" ", "<h3>&nbsp;Предупреждение!</h3>\n&nbsp;&nbsp;Вес должен быть положительным.<br><br>")
+                            continue
+                        return [weight, type]
+                    except ValueError:
+                        weight = -1
+                        self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Вес должен быть целым числом.<br><br>")
+                else:
+                    return [None, -1]
+
     def mouseReleaseEvent(self, event):
         if (self.start_vertex != -1):
             for i, vertex in enumerate(self.vertices):
-                if (abs(vertex[0] - event.x()) < self.vertex_radius and 
-                    abs(vertex[1] - event.y()) < self.vertex_radius):
+                if (abs(vertex[0] - event.x()) < self.vertex_radius and abs(vertex[1] - event.y()) < self.vertex_radius):
 
                     result = self.ask_for_weight()
 
-                    if result is None:  return
+                    if result is None:  break
 
                     weight, type = result
-                    if weight is None:  return
+                    if weight is None:  break
 
                     self.end_edge(self.start_vertex, i, weight, type)
 
@@ -542,71 +629,71 @@ class Ui_MainWindow(QMainWindow):
         self.start_vertex = -1
         self.update()
 
+    def resizeEvent(self, event):
+        width, height = event.size().width(), event.size().height()
+        self.setupGeometry(width, height)
+        self.clipVertices()
+
+    def paintEvent(self, event):
+        self.DrawFrame()
+        if (self.start_vertex != -1):
+            self.DrawEdge(self, self.vertices[self.start_vertex][0], self.vertices[self.start_vertex][1], self.cursor_pos[0], self.cursor_pos[1])
+        self.DrawEdges()
+        self.DrawVertices()
+
     def DrawVertices(self):
         for i, vertex in enumerate(self.vertices):
             self.DrawVertex(self, vertex[0], vertex[1], str(i + 1))
 
-    def DrawVertex(self, image, x, y, index):
-        painter = QPainter(image)
-        pen_and_brush = painter.pen()
-        pen_and_brush.setColor(QColor("#81a4ff"))
-        pen_and_brush.setWidth(2)
-        painter.setPen(pen_and_brush)
+    def DrawVertex(self, object, x, y, index):
+        painter = QPainter(object)
+
+        painter.setPen(QPen(QColor("#81a4ff"), 2))
         painter.setBrush(QColor("#81a4ff"))
-        painter.drawEllipse(
-            QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2))
-        text_pen = painter.pen()
-        text_pen.setColor(QColor(Qt.white))
-        painter.setPen(text_pen)
-        font = QFont("Rubik", 14)
-        painter.setFont(font)
-        painter.drawText(
-            QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2),
-            Qt.AlignCenter, str(index))
+
+        painter.drawEllipse(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2))
+        painter.setPen(QColor(Qt.white))
+
+        painter.setFont(QFont("Rubik", 14))
+        painter.drawText(QRectF(x - self.vertex_radius, y - self.vertex_radius, self.vertex_radius * 2, self.vertex_radius * 2), Qt.AlignCenter, str(index))
+
         painter.end()
 
     def DrawEdges(self):
         for edge in self.edges:
-            self.DrawEdge(self, self.vertices[edge[0]][0], self.vertices[edge[0]][1], self.vertices[edge[1]][0],
-                          self.vertices[edge[1]][1], edge[2], edge[3])
+            self.DrawEdge(self, self.vertices[edge.start_index][0], self.vertices[edge.start_index][1], self.vertices[edge.end_index][0], self.vertices[edge.end_index][1], edge.weight, edge.type)
 
-    def DrawEdge(self, image, x1, y1, x2, y2, weight = -1, type = 1):
-        painter = QPainter(image)
+    def DrawEdge(self, object, x1, y1, x2, y2, weight = -1, type = 1):
+        painter = QPainter(object)
         painter.setPen(QPen(QColor("#5A88FF"), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         text_x, text_y = x2, y2
-        draw_weight = False
 
         if (x1 == x2 and y1 == y2):
-            painter.drawArc(QRect(int(x1) - self.vertex_radius * 2, int(y1) - self.vertex_radius * 2, 
-                                  self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
-            
-            if weight != -1 and weight != "1":
-                text_x = int(x1) - self.vertex_radius * 2
-                text_y = int(y1) - self.vertex_radius * 2
-                draw_weight = True
+            painter.drawArc(QRect(int(x1) - self.vertex_radius * 2, int(y1) - self.vertex_radius * 2, self.vertex_radius * 2, self.vertex_radius * 2), 0, 270 * 16)
+            text_x = int(x1) - self.vertex_radius * 2
+            text_y = int(y1) - self.vertex_radius * 2
 
         else:
             if (type == 0):
-
                 # ================= bezier curve ==================
                 angle1 = math.atan2(y2 - y1, x2 - x1)
 
                 x2 = x2 - self.vertex_radius * math.cos(angle1)
                 y2 = y2 - self.vertex_radius * math.sin(angle1)
 
-                length = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-                points = [QPoint(length, 0), QPoint(int(length / 3), 30), QPoint(int(length / 3 * 2), 30)]
+                length = int(math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2))
+                points = [QPoint(int(length / 3), 30), QPoint(int(length / 3 * 2), 30), QPoint(length, 0)]
                 for i in range(3):
                     x = x1 + points[i].x() * math.cos(angle1) - points[i].y() * math.sin(angle1)
                     y = y1 + points[i].x() * math.sin(angle1) + points[i].y() * math.cos(angle1)
-                    points[i] = QPoint(x, y)
-                path = QPainterPath(QPoint(x1 + int(self.vertex_radius * math.cos(angle1)),
-                                           y1 + int(self.vertex_radius * math.sin(angle1))))
-                path.cubicTo(points[1], points[2], points[0])
+                    points[i] = QPoint(int(x), int(y))
+                path = QPainterPath(QPoint(int(x1 + self.vertex_radius * math.cos(angle1)),
+                                           int(y1 + self.vertex_radius * math.sin(angle1))))
+                path.cubicTo(points[0], points[1], points[2])
                 painter.drawPath(path)
 
                 # ===================== arrow =====================
-                angle2 = math.atan2(y2 - points[2].y(), x2 - points[2].x())
+                angle2 = math.atan2(y2 - points[1].y(), x2 - points[1].x())
                 arrow_len = 15
                 arrow_open_angle = math.pi / 10
                 brush = painter.brush()
@@ -622,20 +709,15 @@ class Ui_MainWindow(QMainWindow):
                 ]
                 painter.drawConvexPolygon(arrow_points)
 
-                if weight != -1 and weight != "1":
-                    text_x = points[2].x()
-                    text_y = points[2].y()
-                    draw_weight = True
+                text_x = points[1].x()
+                text_y = points[1].y()
 
             if (type == 1):
                 painter.drawLine(int(x1), int(y1), int(x2), int(y2))
+                text_x = int(x2) - (x2 - x1) // 4
+                text_y = int(y2) - (y2 - y1) // 4
 
-                if weight != -1 and weight != "1":
-                    text_x = int(x2) - (x2 - x1) // 4
-                    text_y = int(y2) - (y2 - y1) // 4
-                    draw_weight = True
-
-        if (draw_weight):
+        if (weight != -1 and weight != "1"):
             font = QFont("Rubik", 12)
             font_metrics = QFontMetrics(font)
             width = max(30, int(font_metrics.width(str(weight))))
@@ -647,32 +729,17 @@ class Ui_MainWindow(QMainWindow):
             painter.setBrush(brush)
             painter.setFont(font)
             painter.drawRect(text_x - width // 2 - 2, text_y - height // 2 - 2, width + 4, height + 4)
-            painter.drawText(QRectF(text_x - width // 2, text_y - height // 2, width, height), Qt.AlignCenter,
-                             str(weight))
+            painter.drawText(QRectF(text_x - width // 2, text_y - height // 2, width, height), Qt.AlignCenter, str(weight))
 
         painter.end()
-
-    def paintEvent(self, event):
-        self.DrawFrame()
-        if (self.start_vertex != -1):
-            self.DrawEdge(self, self.vertices[self.start_vertex][0], self.vertices[self.start_vertex][1],
-                          self.cursor_pos[0], self.cursor_pos[1])
-        self.DrawEdges()
-        self.DrawVertices()
 
     def DrawFrame(self):
         painter = QPainter(self)
         pen = QPen(QColor("#90AFFF"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         painter.setPen(pen)
         painter.setBrush(QColor("#ffffff"))
-        painter.drawRoundedRect(15, 85, 750, 700, 10, 10)
+        painter.drawRoundedRect(self.drawing_board_size, 10, 10)
         painter.end()
-
-    def index_changed(self, s):
-        if s == 0:
-            self.parse_matrix_mode = "adj"
-        if s == 1:
-            self.parse_matrix_mode = "inc"
 
     def build_graph(self):
         if self.parse_matrix_mode == "adj":
@@ -680,49 +747,29 @@ class Ui_MainWindow(QMainWindow):
         if self.parse_matrix_mode == "inc":
             self.parse_incidence_matrix()
 
-    def ask_for_weight(self):
-        weight = -1
-        while int(weight) < 0:
-            if self.dialog.exec():
-                weight, type = self.dialog.getInputs()
-                if weight.strip() == "":
-                    return ["1", type]
-                try:
-                    weight = int(weight)
-                    if weight < 0:
-                        self.warningPopup(" ",
-                                          "<h3>&nbsp;Предупреждение!</h3>\n&nbsp;&nbsp;Вес должен быть положительным.<br><br>")
-                        continue
-                    return [weight, type]
-                except ValueError:
-                    weight = -1
-                    self.warningPopup(" ", "<h3>&nbsp;Ошибка!</h3>\n&nbsp;&nbsp;Вес должен быть целым числом.<br><br>")
-            else:
-                return [None, -1]
-
     def end_edge(self, start_vertex, end_vertex, weight, type):
         i = 0
         while i < len(self.edges):
             edge = self.edges[i]
-            if (type == edge[3]):
-                if (edge[0] == start_vertex and edge[1] == end_vertex):
+            if (type == edge.type):
+                if (edge.start_index == start_vertex and edge.end_index == end_vertex):
                     self.edges.pop(i)
                     continue
 
                 if (type == 1):
-                    if (edge[0] == end_vertex and edge[1] == start_vertex):
+                    if (edge.start_index == end_vertex and edge.end_index == start_vertex):
                         self.edges.pop(i)
                         continue
 
-            if (type != edge[3]):
-                if (edge[0] == start_vertex and edge[1] == end_vertex) or \
-                        (edge[0] == end_vertex and edge[1] == start_vertex):
+            if (type != edge.type):
+                if (edge.start_index == start_vertex and edge.end_index == end_vertex) or \
+                        (edge.start_index == end_vertex and edge.end_index == start_vertex):
                     self.edges.pop(i)
                     continue
 
             i += 1
 
-        self.edges.append([start_vertex, end_vertex, weight, type])
+        self.edges.append(Edge(start_vertex, end_vertex, weight, type))
 
         self.update()
 
@@ -740,9 +787,9 @@ class Ui_MainWindow(QMainWindow):
 
         adj_matrix = [[0 for i in range(len(self.vertices))] for j in range(len(self.vertices))]
         for edge in self.edges:
-            if edge[3] == 1:
-                adj_matrix[edge[1]][edge[0]] = edge[2]
-            adj_matrix[edge[0]][edge[1]] = edge[2]
+            if edge.type == 1:
+                adj_matrix[edge.end_index][edge.start_index] = edge.weight
+            adj_matrix[edge.start_index][edge.end_index] = edge.weight
 
         max_width = max(len(str(entry)) for row in adj_matrix for entry in row)
         output_text = ""
@@ -750,6 +797,7 @@ class Ui_MainWindow(QMainWindow):
             formatted_row = [f"{entry:>{max_width}}  " for entry in row]
             output_text += " ".join(formatted_row) + "\n"
         self.TextOutput.setText(output_text)
+
         self.tableWidget.clear()
         self.tableWidget.setRowCount(len(adj_matrix))
         self.tableWidget.setColumnCount(len(adj_matrix[0]))
@@ -769,12 +817,12 @@ class Ui_MainWindow(QMainWindow):
         inc_matrix = [[0 for i in range(len(self.edges))] for j in range(len(self.vertices))]
 
         for i, edge in enumerate(self.edges):
-            if edge[3] == 0:
-                inc_matrix[edge[1]][i] = -int(edge[2]) if isinstance(edge[2], str) else -edge[2]
-                inc_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
-            if edge[3] == 1:
-                inc_matrix[edge[1]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
-                inc_matrix[edge[0]][i] = int(edge[2]) if isinstance(edge[2], str) else edge[2]
+            if edge.type == 0:
+                inc_matrix[edge.end_index][i] = -int(edge.weight) if isinstance(edge.weight, str) else -edge.weight
+                inc_matrix[edge.start_index][i] = int(edge.weight) if isinstance(edge.weight, str) else edge.weight
+            if edge.type == 1:
+                inc_matrix[edge.end_index][i] = int(edge.weight) if isinstance(edge.weight, str) else edge.weight
+                inc_matrix[edge.start_index][i] = int(edge.weight) if isinstance(edge.weight, str) else edge.weight
 
         max_width = max(len(str(entry)) for row in inc_matrix for entry in row)
         output_text = ""
@@ -786,6 +834,7 @@ class Ui_MainWindow(QMainWindow):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(len(inc_matrix))
         self.tableWidget.setColumnCount(len(inc_matrix[0]))
+        self.tableWidget.setHorizontalHeaderLabels([f"{edge.start_index + 1}-{edge.end_index + 1}" for edge in self.edges])
         font = QFont("Rubik", 12)
 
         for i in range(len(inc_matrix)):
@@ -795,11 +844,10 @@ class Ui_MainWindow(QMainWindow):
                 self.tableWidget.setItem(i, j, item)
 
     def create_graph(self, vertices_count):
-        center_x, center_y = 700 / 2 + 15, 700 / 2 + 15
-        radius = center_x / 2
+        center_x, center_y = self.drawing_board_size.width() / 2 + self.drawing_board_size.x(), self.drawing_board_size.height() / 2 + self.drawing_board_size.y()
+        radius = min(center_x / 7 * 6 - self.drawing_board_size.x(), center_y / 7 * 6 - self.drawing_board_size.y())
         for i in range(vertices_count):
-            self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i),
-                                  center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
+            self.vertices.append([center_x + radius * math.cos(2 * math.pi / vertices_count * i), center_y + radius * math.sin(2 * math.pi / vertices_count * i), 1])
 
     def parse_adjacency_matrix(self):
         lines = self.TextOutput.toPlainText().strip().split("\n")
@@ -826,12 +874,10 @@ class Ui_MainWindow(QMainWindow):
             for j in range(len(matrix[i])):
                 weight = matrix[i][j]
                 if weight > 0:
-                    if not [j, i, weight, 0] in self.edges:
-                        self.edges.append([i, j, weight, 0])
+                    if not Edge(j, i, weight, 0) in self.edges:
+                        self.end_edge(i, j, weight, 0)
                     else:
-                        for k, edge in enumerate(self.edges):
-                            if edge[0] == j and edge[1] == i:
-                                self.edges[k][3] = 1
+                        self.edges[self.edges.index(Edge(j, i, weight, 0))].type = 1
 
     def parse_incidence_matrix(self):
         lines = self.TextOutput.toPlainText().strip().split("\n")

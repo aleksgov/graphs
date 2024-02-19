@@ -43,6 +43,7 @@ class WarningDialog(QDialog):
         )
         close_button.clicked.connect(self.reject)
         close_button.setGeometry(0, 215, 350, 45)
+        close_button.setCursor(Qt.PointingHandCursor)
 
 
 class InstructionsDialog(QDialog):
@@ -109,7 +110,7 @@ class InstructionsDialog(QDialog):
                         "<p>• Приложение может быть закрыто при нажатии ЛКМ на крестик в верхнем правом углу окна.</p>"
                         "<p>При использовании приложения рекомендуется внимательно следить за сообщениями об ошибках</p>"
                         "<p>и предупреждениями в случае неправильного ввода данных или выполнения операций.</p>",
-                "gif_paths": []
+                "gif_paths": ["video8.gif"]
             },
         ]
 
@@ -292,8 +293,7 @@ class Edge:
     start_index: int
     end_index: int
     weight: int
-    type: int           #0 - oriented, 1 - non-oriented
-
+    type: int          
 
 @dataclass
 class Vertex:
